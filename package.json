@@ -1,0 +1,36 @@
+{
+  "name": "@efflore/capsula",
+  "version": "0.9.0",
+  "author": "Esther Brunner",
+  "main": "index.js",
+  "module": "index.ts",
+  "type": "module",
+  "types": "index.d.ts",
+  "description": "Capsula - base class for Web Components with states and UI accessors",
+  "license": "MIT",
+  "keywords": [
+    "Capsula",
+    "Web Components",
+    "Base Class",
+    "States",
+    "UI Accessors"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build:dev": "BUN_ENV=development bun build index.ts --outdir ./ --define Bun.env.DEV_MODE=true",
+    "build": "bun build index.ts --outdir ./ --minify --define Bun.env.DEV_MODE=false && bunx tsc",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@efflore/cause-effect": "^0.9.4",
+    "@efflore/flow-sure": "^0.9.8"
+  }
+}
