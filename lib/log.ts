@@ -1,4 +1,4 @@
-import { isObject, isString } from "./util"
+import { isDefinedObject, isString } from "./util"
 
 /* === Types === */
 
@@ -53,9 +53,8 @@ const elementName = (el: Element): string =>
  */
 const valueString = (value: unknown): string =>
 	isString(value) ? `"${value}"`
-		: isObject(value) ? JSON.stringify(value)
-		: value != null ? String(value)
-		: 'undefined'
+		: isDefinedObject(value) ? JSON.stringify(value)
+		: String(value)
 
 /**
  * Log a message to the console with the specified level
@@ -67,7 +66,7 @@ const valueString = (value: unknown): string =>
  * @returns {T} - value passed through
  */
 const log = <T>(value: T, msg: string, level: LogLevel = LOG_DEBUG): T => {
-	if (process.env.DEV_MODE === 'true' || ([LOG_ERROR, LOG_WARN] as LogLevel[]).includes(level))
+	if (Bun.env.DEV_MODE === 'true' || ([LOG_ERROR, LOG_WARN] as LogLevel[]).includes(level))
 		console[level](msg, value)
 	return value
 }

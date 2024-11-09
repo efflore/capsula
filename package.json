@@ -27,10 +27,11 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "@efflore/cause-effect": "^0.9.4",
-    "@efflore/flow-sure": "^0.9.8"
+    "@efflore/flow-sure": "^0.9.8",
+    "@efflore/pulse": "^0.9.1"
   }
 }

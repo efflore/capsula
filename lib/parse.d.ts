@@ -1,7 +1,6 @@
 import { type Maybe } from '@efflore/flow-sure';
-import type { Capsula } from '../index';
-type AttributeParser<T> = (element: Capsula, value: string | undefined, old: string | undefined) => Maybe<T>;
-type AttributeMap = Record<string, AttributeParser<unknown>>;
+import type { Capsula } from './capsula';
+type AttributeParser<T> = (value: string | undefined, element: Capsula, old: string | undefined) => Maybe<T>;
 /**
  * Parse according to static attributeMap
  *
@@ -10,6 +9,54 @@ type AttributeMap = Record<string, AttributeParser<unknown>>;
  * @param {string} name - attribute name
  * @param {string} value - attribute value
  * @param {string | undefined} [old=undefined] - old attribute value
+ * @returns {unknown}
  */
-declare const parse: (host: Capsula, name: string, value: string | undefined, old?: string | undefined) => string | Maybe<any> | undefined;
-export { type AttributeParser, type AttributeMap, parse };
+declare const parse: (host: Capsula, name: string, value: string | undefined, old?: string | undefined) => unknown;
+/**
+ * Parse a boolean attribute as an actual boolean value
+ *
+ * @since 0.7.0
+ * @param {string} value - maybe string value
+ * @returns {boolean}
+ */
+declare const asBoolean: (value?: string) => boolean;
+/**
+ * Parse an attribute as a number forced to integer
+ *
+ * @since 0.7.0
+ * @param {string} value - maybe string value
+ * @returns {number | undefined}
+ */
+declare const asInteger: (value?: string) => number | undefined;
+/**
+ * Parse an attribute as a number
+ *
+ * @since 0.7.0
+ * @param {string} value - maybe string value
+ * @returns {number | undefined}
+ */
+declare const asNumber: (value?: string) => number | undefined;
+/**
+ * Parse an attribute as a string
+ *
+ * @since 0.7.0
+ * @param {string} value - maybe string value
+ * @returns {string}
+ */
+declare const asString: (value?: string) => string | undefined;
+/**
+ * Parse an attribute as a tri-state value (true, false, mixed)
+ *
+ * @since 0.9.0
+ * @param {string[]} valid - array of valid values
+ */
+declare const asEnum: (valid: string[]) => (value?: string) => string | undefined;
+/**
+ * Parse an attribute as a JSON serialized object
+ *
+ * @since 0.7.2
+ * @param {string} value - maybe string value
+ * @returns {unknown}
+ */
+declare const asJSON: (value?: string) => unknown;
+export { type AttributeParser, parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON, };

@@ -1,16 +1,19 @@
 const isFunction = /*#__PURE__*/ (value: unknown): value is (...args: any[]) => any =>
     typeof value === 'function'
 
-const isObject = /*#__PURE__*/ (value: unknown): value is Record<string, unknown> =>
-	typeof value === 'object'
-
 const isDefinedObject = /*#__PURE__*/ (value: unknown): value is Record<string, unknown> =>
-	!!value && isObject(value)
+	!!value && typeof value === 'object'
 
 const isNumber = /*#__PURE__*/ (value: unknown): value is number =>
 	typeof value === 'number'
 
 const isString = /*#__PURE__*/ (value: unknown): value is string =>
-	typeof value ==='string'
+	typeof value === 'string'
 
-export { isFunction, isObject, isDefinedObject, isNumber, isString }
+const isSymbol = /*#__PURE__*/ (value: unknown): value is Symbol =>
+	typeof value === 'symbol'
+
+const isPropertyKey = /*#__PURE__*/ (value: unknown): value is PropertyKey =>
+	isString(value) || isSymbol(value) || isNumber(value)
+
+export { isFunction, isDefinedObject, isNumber, isString, isSymbol, isPropertyKey }

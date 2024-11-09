@@ -1,37 +1,66 @@
-import { maybe, ok } from '@efflore/flow-sure'
+import { type Signal, isSignal, computed } from '@efflore/cause-effect'
 
-import type { Capsula } from '../index'
-import { isDefinedObject } from './util'
+import { Capsula } from './capsula'
+import { log, LOG_ERROR, valueString } from './log'
+import { isFunction, isPropertyKey } from './util'
 
 /* === Types === */
 
-type UI<T> = {
-	readonly [Symbol.toStringTag]: string
-	host: Capsula
-    target: T
-}
-
-/* === Constants === */
-
-const TYPE_UI = 'UI'
+type StateLike<T> = PropertyKey | Signal<T> | (() => T)
 
 /* === Exported Functions === */
 
-const ui = (host: Capsula, target: Element = host) => ({
-	[Symbol.toStringTag]: TYPE_UI,
-	host,
-	target
-})
+const fromStateLike = <T>(host: Capsula, source: StateLike<T>): Signal<T> | undefined => {
+	return isPropertyKey(source) ? host.signals.get(source)
+	    : isSignal(source) ? source
+		: isFunction(source) &&!source.length ? computed(source)
+		: undefined
+}
 
-const isUI = (value: unknown): value is UI<unknown> =>
-	isDefinedObject(value)
-		&& (value as { [key in typeof Symbol.toStringTag]: string })[Symbol.toStringTag] === TYPE_UI
+/* === Exported Class === */
 
-const first = (host: Capsula) => (selector: string) => 
-	maybe(host.root.querySelector(selector))
-		.map<UI<Element>>((target: Element) => ui(host, target))
+class UI<T extends Element> {
+	constructor(
+		public readonly host: Capsula,
+		public readonly targets: T[] = [host as unknown as T]
+	) {}
 
-const all = (host: Capsula) => (selector: string) =>
-	Array.from(host.root.querySelectorAll(selector)).map(target => ui(host, target))
+	on(event: string, listener: EventListenerOrEventListenerObject): UI<T> {
+		this.targets.forEach(target => target.addEventListener(event, listener))
+        return this
+	}
 
-export { type UI, TYPE_UI, ui, isUI, first, all }
+	off(event: string, listener: EventListenerOrEventListenerObject): UI<T> {
+		this.targets.forEach(target => target.removeEventListener(event, listener))
+        return this
+	}
+
+	pass(states: Record<string, StateLike<T>>): UI<T> {
+		this.targets.forEach(target => {
+			if (target instanceof Capsula) {
+				(this.host.constructor as typeof Capsula).registry
+					.whenDefined(target.tagName)
+					.then(() => {
+						Object.entries(states).forEach(([name, source]) => {
+							const value = fromStateLike(this.host, source)
+							if (value)
+								target.set(name, value)
+                            else
+								log(source, `Invalid source for state ${valueString(name)}`, LOG_ERROR)
+                        })
+					})
+			} else {
+				log(target, 'Target is not a Capsula instance', LOG_ERROR)
+			}
+        })
+        return this
+	}
+
+	sync(...fns: ((host: Capsula, target: T) => void)[]): UI<T> {
+		this.targets.forEach(target => fns.forEach(fn => fn(this.host, target)))
+        return this
+	}
+
+}
+
+export { UI }
