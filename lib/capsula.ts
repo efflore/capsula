@@ -5,10 +5,17 @@ import { isDefinedObject, isFunction, isString } from "./util"
 import { elementName, log, LOG_ERROR, valueString } from "./log"
 import { UI } from "./ui"
 import { parse } from "./parse"
+import type { UnknownContext } from "./context"
 
 /* === Types === */
 
-export type ValueOrFunction<T> = T | ((...args: any[]) => T)
+export type AttributeParser<T> = (
+	value: string | undefined,
+	element: Capsula,
+	old: string | undefined
+) => T | undefined
+
+export type ValueOrAttributeParser<T> = T | AttributeParser<T>
 
 /* === Exported Class === */
 
@@ -21,8 +28,10 @@ export type ValueOrFunction<T> = T | ((...args: any[]) => T)
  */
 export class Capsula extends HTMLElement {
 	static registry: CustomElementRegistry = customElements
-	static states: Record<string, ValueOrFunction<any>> = {}
-	static observedAttributes = []
+	static states: Record<string, ValueOrAttributeParser<any>> = {}
+	static observedAttributes: string[]
+	static consumedContexts: UnknownContext[]
+	static providedContexts: UnknownContext[]
 
 	/**
 	 * Define a custom element in the custom element registry
@@ -97,6 +106,13 @@ export class Capsula extends HTMLElement {
 			if (isString(this.getAttribute('debug'))) this.debug = true
 			if (this.debug) log(elementName(this), 'Connected')
 		}
+		Object.entries((this.constructor as typeof Capsula).states)
+			.forEach(([name, source]) => {
+				const value = isFunction(source)
+					? parse(this, name, this.getAttribute(name) ?? undefined, undefined)
+					: source
+				this.set(name, value, false)
+			})
 	}
 
 	disconnectedCallback(): void {

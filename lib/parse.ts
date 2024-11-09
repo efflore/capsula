@@ -1,21 +1,8 @@
-import { type Maybe, maybe, result } from '@efflore/flow-sure'
+import { maybe, result } from '@efflore/flow-sure'
 
 import { isFunction } from './util'
 import type { Capsula } from './capsula'
 import { log, LOG_ERROR } from './log'
-
-/* === Types === */
-
-type AttributeParser<T> = (
-	value: string | undefined,
-	element: Capsula,
-	old: string | undefined
-) => Maybe<T>
-
-/* === Internal Functions === */
-
-const isAttributeParser = (value: unknown): value is AttributeParser<unknown> =>
-	isFunction(value) && !!(value as AttributeParser<unknown>).length
 
 /* === Exported Functions === */
 
@@ -25,7 +12,7 @@ const isAttributeParser = (value: unknown): value is AttributeParser<unknown> =>
  * @since 0.8.4
  * @param {Capsula} host - host Capsula
  * @param {string} name - attribute name
- * @param {string} value - attribute value
+ * @param {string | undefined} value - attribute value
  * @param {string | undefined} [old=undefined] - old attribute value
  * @returns {unknown}
  */
@@ -36,7 +23,9 @@ const parse = (
 	old: string | undefined = undefined
 ): unknown => {
 	const parser = (host.constructor as typeof Capsula).states[name]
-	return isAttributeParser(parser) ? parser(value, host, old) : value
+	return isFunction(parser) && !!parser.length
+		? parser(value, host, old)
+		: value
 }
 
 /**
@@ -103,7 +92,4 @@ const asJSON = (value?: string): unknown =>
 		}
 	}).get()
 
-export {
-	type AttributeParser,
-	parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON,
-}
+export { parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON }

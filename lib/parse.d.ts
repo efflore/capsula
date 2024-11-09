@@ -1,13 +1,11 @@
-import { type Maybe } from '@efflore/flow-sure';
 import type { Capsula } from './capsula';
-type AttributeParser<T> = (value: string | undefined, element: Capsula, old: string | undefined) => Maybe<T>;
 /**
  * Parse according to static attributeMap
  *
  * @since 0.8.4
  * @param {Capsula} host - host Capsula
  * @param {string} name - attribute name
- * @param {string} value - attribute value
+ * @param {string | undefined} value - attribute value
  * @param {string | undefined} [old=undefined] - old attribute value
  * @returns {unknown}
  */
@@ -59,4 +57,4 @@ declare const asEnum: (valid: string[]) => (value?: string) => string | undefine
  * @returns {unknown}
  */
 declare const asJSON: (value?: string) => unknown;
-export { type AttributeParser, parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON, };
+export { parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON };

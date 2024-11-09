@@ -1,6 +1,8 @@
 import { type Signal } from "@efflore/cause-effect";
 import { UI } from "./ui";
-export type ValueOrFunction<T> = T | ((...args: any[]) => T);
+import type { UnknownContext } from "./context";
+export type AttributeParser<T> = (value: string | undefined, element: Capsula, old: string | undefined) => T | undefined;
+export type ValueOrAttributeParser<T> = T | AttributeParser<T>;
 /**
  * Base class for reactive custom elements
  *
@@ -10,8 +12,10 @@ export type ValueOrFunction<T> = T | ((...args: any[]) => T);
  */
 export declare class Capsula extends HTMLElement {
     static registry: CustomElementRegistry;
-    static states: Record<string, ValueOrFunction<any>>;
-    static observedAttributes: never[];
+    static states: Record<string, ValueOrAttributeParser<any>>;
+    static observedAttributes: string[];
+    static consumedContexts: UnknownContext[];
+    static providedContexts: UnknownContext[];
     /**
      * Define a custom element in the custom element registry
      *

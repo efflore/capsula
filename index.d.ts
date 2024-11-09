@@ -3,6 +3,7 @@
  * @version 0.9.0
  * @author Esther Brunner
  */
-export { Capsula } from './lib/capsula';
+export { type AttributeParser, type ValueOrAttributeParser, Capsula } from './lib/capsula';
 export * from './lib/parse';
+export { type UnknownContext, useContext } from './lib/context';
 export * from './lib/effects';
