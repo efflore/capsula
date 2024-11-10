@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Capsula Tests</title>
+</head>
+<body>
+
+	<style>
+		my-counter {
+			display: flex;
+			flex-direction: row;
+			gap: 1rem;
+
+			p {
+				margin-block: 0.2rem;
+			}
+		}
+	</style>
+
+	<void-component id="void">
+		<h1>Hello from Server</h1>
+	</void-component>
+	<void-component id="void2">
+		<h1>Hello from Server</h1>
+	</void-component>
+	<causal-component id="causal">
+		<h1>Hello from Server</h1>
+	</causal-component>
+	<causal-component id="causal-with-ignored-attribute" heading="Hello from Attribute">
+		<h1>Hello from Server</h1>
+	</causal-component>
+	<updating-component id="updating">
+		<h1>Hello from Server</h1>
+		<p>Number of unread messages: <span></span></p>
+	</updating-component>
+	<updating-component id="updating-with-string-attribute" heading="Hello from Attribute">
+		<h1>Hello from Server</h1>
+		<p>Number of unread messages: <span></span></p>
+	</updating-component>
+	<updating-component id="updating-with-number-attribute" count="42" step="0.1" value="3.14">
+		<h1>Hello from Server</h1>
+		<p>Number of unread messages: <span></span></p>
+		<input type="number" />
+	</updating-component>
+	<updating-component id="updating-with-boolean-attribute" selected>
+		<h1>Hello from Server</h1>
+		<p>Number of unread messages: <span></span></p>
+	</updating-component>
+	<child-component id="orphan">
+		<h1>Hello from Server</h1>
+		<p>Text from Server</p>
+	</child-component>
+	<parent-component id="parent" heading="Hello from Attribute" debug>
+		<child-component id="child" debug>
+			<h1>Hello from Server</h1>
+			<p>Text from Server</p>
+		</child-component>
+	</parent-component>
+	<my-counter value="42">
+		<p>Count: <span class="value">42</span></p>
+		<p>Parity: <span class="parity">even</span></p>
+		<p>Double: <span class="double">84</span></p>
+		<div>
+			<button class="decrement">–</button>
+			<button class="increment">+</button>
+		</div>
+	</my-counter>
+	<greeting-configurator>
+		<input-field class="first">
+			<input type="text" name="first" value="Jane" />
+		</input-field>
+		<input-field class="last">
+			<input type="text" name="last" value="Doe" />
+		</input-field>
+		<input-checkbox>
+			<input type="checkbox" name="fullname" />
+		</input-checkbox>
+		<hello-world>
+			<p>
+				<span class="greeting">Hello</span>
+				<span class="name">World</span>
+			</p>
+		</hello-world>
+	</greeting-configurator>
+	<lazy-load src="/test/mock/lazy-load.html" id="lazy-success">
+		<p class="loading" role="status">Loading...</p>
+		<p class="error" role="alert" aria-live="polite"></p>
+	</lazy-load>
+	<lazy-load src="/test/mock/404.html" id="lazy-error">
+		<p class="loading" role="status">Loading...</p>
+		<p class="error" role="alert" aria-live="polite"></p>
+	</lazy-load>
+
+	<script type="module">
+		import { runTests } from '@web/test-runner-mocha'
+		import { assert } from '@esm-bundle/chai'
+		import {
+			Capsula, batch, effect, maybe,animationFrame,
+			asBoolean, asInteger, asNumber,
+			setText, setProperty, setAttribute, toggleAttribute, toggleClass, setStyle
+		} from '../index.js'
+
+		const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+		const normalizeText = text => text.replace(/\s+/g, ' ').trim()
+
+		class VoidComponent extends Capsula {}
+		VoidComponent.define('void-component')
+
+		class CausalComponent extends Capsula {
+			connectedCallback() {
+				this.set('heading', 'Hello from Internal State')
+				this.first('h1').sync(setText('heading'))
+			}
+		}
+		CausalComponent.define('causal-component')
+
+		class UpdatingComponent extends Capsula {
+			static observedAttributes = ['heading', 'count', 'step', 'value', 'selected']
+			static states = {
+				count: asInteger,
+				step: asNumber,
+				value: (value, el) => maybe(value)
+					.map(v => Number.isInteger(el.get('step')) ? parseInt(v, 10) : parseFloat(v))
+					.filter(Number.isFinite)
+					.get(),
+				selected: asBoolean
+			}
+
+			connectedCallback() {
+				this.first('h1').sync(setText('heading'), toggleClass('selected'))
+				this.first('span').sync(setText('count'))
+				this.first('input').sync(setAttribute('step'), setProperty('value'))
+			}
+		}
+		UpdatingComponent.define('updating-component')
+
+		class ParentComponent extends Capsula {
+			static observedAttributes = ['heading']
+
+			connectedCallback() {
+				super.connectedCallback()
+				this.first('child-component').pass({
+					heading: 'heading',
+					text: () => {
+						console.log('Context inside function:', this)
+						this.get('heading').toUpperCase()
+					}
+				})
+			}
+		}
+		ParentComponent.define('parent-component')
+
+		class ChildComponent extends Capsula {
+			connectedCallback() {
+				super.connectedCallback()
+				this.first('h1').sync(setText('heading'))
+				this.first('p').sync(setText('text'))
+			}
+		}
+		ChildComponent.define('child-component')
+
+		class MyCounter extends Capsula {
+			static observedAttributes = ['value']
+			static states = {
+				value: asInteger
+			}
+
+			connectedCallback() {
+				this.first('.decrement').on('click', () => this.set('value', v => --v))
+				this.first('.increment').on('click', () => this.set('value', v => ++v))
+				this.first('.value').sync(setText('value'))
+				this.first('.parity').sync(setText(() => this.get('value') % 2 ? 'odd' : 'even'))
+				this.first('.double').sync(setText(() => this.get('value') * 2))
+			}
+		}
+		MyCounter.define('my-counter')
+
+		class GreetingConfigurator extends Capsula {
+			connectedCallback() {
+				super.connectedCallback()
+				const firstName = this.querySelector('.first')
+				this.first('hello-world').pass({
+					name: () => this.querySelector('input-checkbox').get('checked')
+						? `${firstName?.get('value')} ${this.querySelector('.last')?.get('value')}`
+						: firstName?.get('value')
+				})
+			}
+		}
+		GreetingConfigurator.define('greeting-configurator')
+
+		class HelloWorld extends Capsula {
+			static observedAttributes = ['greeting']
+
+			connectedCallback() {
+				super.connectedCallback()
+				this.first('.greeting').sync(setText('greeting'))
+				this.first('.name').sync(setText('name'))
+			}
+		}
+		HelloWorld.define('hello-world')
+
+		class InputField extends Capsula {
+			connectedCallback() {
+				const input = this.querySelector('input')
+				this.set('value', input.value)
+				input.onchange = () => this.set('value', input.value)
+			}
+		}
+		InputField.define('input-field')
+
+		class InputCheckbox extends Capsula {
+			connectedCallback() {
+				const input = this.querySelector('input')
+				this.set('checked', input.checked)
+				input.onchange = () => this.set('checked', input.checked)
+			}
+		}
+		InputCheckbox.define('input-checkbox')
+
+		class LazyLoad extends Capsula {
+			connectedCallback() {
+				this.set('error', '')
+				this.set('content', async () => {
+					fetch(this.getAttribute('src')) // TODO ensure 'src' attribute is a valid URL from a trusted source
+						.then(async response => {
+							await wait(1500) // we wait a bit, otherwise Promise is already fulfilled when test runs
+							return response.ok
+								? response.text()
+								: this.set('error', response.statusText)
+						})
+						.catch(error => this.set('error', error))
+				})
+
+				const loadingEl = this.querySelector('.loading')
+				const errorEl = this.querySelector('.error')
+
+				effect(() => {
+					const error = this.get('error')
+					if (!error) return
+					loadingEl.remove() // remove placeholder for pending state
+					errorEl.textContent = error // fill error message
+				})
+
+				effect(() => {
+					const content = this.get('content')
+					if (!content) return
+					this.root = this.shadowRoot || this.attachShadow({ mode: 'open' }) // we use shadow DOM to encapsulate styles
+					this.root.innerHTML = content // UNSAFE!, use only trusted sources in 'src' attribute
+					loadingEl.remove() // remove placeholder for pending state
+					errorEl.remove() // won't be needed anymore as request was successful
+				})
+			}
+		}
+		LazyLoad.define('lazy-load')
+
+		runTests(() => {
+
+			describe('Void component', function () {
+
+				it('should be an instance of HTMLElement', async function () {
+					const voidComponent = document.getElementById('void')
+					assert.instanceOf(voidComponent, HTMLElement)
+					assert.equal(voidComponent.localName, 'void-component')
+				})
+
+				it('should do nothing at all', async function () {
+					const voidComponent = document.getElementById('void')
+					await animationFrame()
+					const textContent = normalizeText(voidComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Server', 'Should not change server-side rendered heading')
+				})
+
+				it('should return false with has() for unset state', async function () {
+					const voidComponent = document.getElementById('void')
+					assert.equal(voidComponent.has('test'), false)
+					assert.equal(voidComponent.hasOwnProperty('test'), false)
+				})
+
+				it('should create a new state with set()', async function () {
+					const voidComponent = document.getElementById('void')
+					voidComponent.set('foo', 'foo')
+					await animationFrame()
+					assert.equal(voidComponent.get('foo'), 'foo')
+				})
+
+				it('should return true with has() for set state', async function () {
+					const voidComponent = document.getElementById('void')
+					voidComponent.set('bar', 'bar')
+					await animationFrame()
+					assert.equal(voidComponent.has('bar'), true)
+				})
+
+				it('should update an existing state with set()', async function () {
+					const voidComponent = document.getElementById('void')
+					for (let i = 1; i <= 10; i++) {
+						voidComponent.set('test', i)
+					}
+					await animationFrame()
+					assert.equal(voidComponent.get('test'), 10)
+				})
+
+				it('should trigger dependent effects with set()', async function () {
+					const voidComponent = document.getElementById('void2')
+					voidComponent.set('foo', 'test', false)
+					let effectDidRun = false
+					effect(() => {
+						voidComponent.get('foo')
+						effectDidRun = true
+					})
+					await animationFrame()
+					assert.isTrue(effectDidRun)
+				})
+
+				it('should trigger dependent effects with set() again after change', async function () {
+					const voidComponent = document.getElementById('void2')
+					voidComponent.set('foo', 'test', false)
+					let effectDidRun = false
+					effect(() => {
+						voidComponent.get('foo')
+						effectDidRun = true
+					})
+					voidComponent.set('foo', 'bar')
+					await animationFrame()
+					assert.isTrue(effectDidRun)
+				})
+
+				it('repeated set() should trigger dependent effect only once', async function () {
+					const voidComponent = document.getElementById('void2')
+					voidComponent.set('bar', 0)
+					let result = 0
+					batch(() => {
+						for (let i = 1; i <= 10; i++) {
+							voidComponent.set('bar', i)
+						}
+					})
+					effect(() => {
+						voidComponent.get('bar')
+						result++
+					})
+					assert.equal(result, 1)
+				})
+
+				it('should return false with has() for deleted state', async function () {
+					const voidComponent = document.getElementById('void')
+					voidComponent.set('test', 'test')
+					voidComponent.delete('test')
+					await animationFrame()
+					assert.equal(voidComponent.has('test'), false)
+				})
+			})
+
+			describe('Causal component', function () {
+
+				it('should update according to internal state', async function () {
+					const causalComponent = document.getElementById('causal')
+					await animationFrame()
+					const textContent = normalizeText(causalComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Internal State', 'Should have initial heading from internal state')
+				})
+
+				it('should update when state is set', async function () {
+					const causalComponent = document.getElementById('causal')
+					causalComponent.set('heading', 'Hello from State')
+					await animationFrame()
+					const textContent = normalizeText(causalComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from State', 'Should update text content from setting heading state')
+				})
+
+				it('should update after a delay when state is set', async function () {
+					const causalComponent = document.getElementById('causal')
+					const delay = Math.floor(Math.random() * 1000)
+					await wait(delay)
+					causalComponent.set('heading', 'Hello from Delayed State')
+					await animationFrame()
+					const textContent = normalizeText(causalComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Delayed State', 'Should update text content from setting heading state after a delay')
+				})
+
+				it('should ignore non-observed attributes', async function () {
+					const causalComponent = document.getElementById('causal-with-ignored-attribute')
+					await animationFrame()
+					const textContent = normalizeText(causalComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Internal State', 'Should have initial heading from internal state')
+				})
+			})
+
+			describe('Updating component', function () {
+
+				it('should do nothing if attribute is not set', async function () {
+					const updatingComponent = document.getElementById('updating')
+					await animationFrame()
+					const textContent = normalizeText(updatingComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Server', 'Should not change server-side rendered heading')
+				})
+
+				it('should update from initial string attribute', async function () {
+					const updatingComponent = document.getElementById('updating-with-string-attribute')
+					await animationFrame()
+					const textContent = normalizeText(updatingComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Attribute', 'Should have initial heading from string attribute')
+				})
+
+				it('should update from initial integer number attribute', async function () {
+					const updatingComponent = document.getElementById('updating-with-number-attribute')
+					await animationFrame()
+					const textContent = normalizeText(updatingComponent.querySelector('span').textContent)
+					assert.equal(textContent, '42', 'Should have initial count from numeric attribute')
+				})
+
+				it('should update from initial floating point number attribute', async function () {
+					const updatingComponent = document.getElementById('updating-with-number-attribute')
+					await animationFrame()
+					const stepAttribute = updatingComponent.querySelector('input').getAttribute('step')
+					assert.equal(stepAttribute, '0.1', 'Should have initial step attribute from floating point number attribute')
+				})
+
+				it('should update from initial custom parser attribute', async function () {
+					const updatingComponent = document.getElementById('updating-with-number-attribute')
+					await animationFrame()
+					const valueAttribute = updatingComponent.querySelector('input').value
+					assert.equal(valueAttribute, '3.14', 'Should have initial value attribute from custom parser attribute')
+				})
+
+				it('should add class from boolean attribute', async function () {
+					const updatingComponent = document.getElementById('updating-with-boolean-attribute')
+					await animationFrame()
+					const className = updatingComponent.querySelector('h1').className
+					assert.equal(className, 'selected', 'Should have initial class from boolean attribute')
+				})
+
+				it('should update when string attribute set', async function () {
+					const updatingComponent = document.getElementById('updating-with-string-attribute')
+					updatingComponent.setAttribute('heading', 'Hello from Changed Attribute')
+					await animationFrame()
+					const textContent = normalizeText(updatingComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from Changed Attribute', 'Should update text content from setting heading attribute')
+				})
+
+				it('should update when numeric attribute is set', async function () {
+					const updatingComponent = document.getElementById('updating-with-number-attribute')
+					updatingComponent.setAttribute('count', '0')
+					await animationFrame()
+					const textContent = normalizeText(updatingComponent.querySelector('span').textContent)
+					assert.equal(textContent, '0', 'Should update text content from setting count attribute')
+				})
+
+				it('should update when numeric state is set', async function () {
+					const updatingComponent = document.getElementById('updating-with-number-attribute')
+					updatingComponent.set('step', 1)
+					await animationFrame()
+					const stepAttribute = updatingComponent.querySelector('input').getAttribute('step')
+					assert.equal(stepAttribute, '1', 'Should update step attribute of input element from setting step state')
+				})
+
+				it('should update when numeric attribute is set, parsed as integer', async function () {
+					const updatingComponent = document.getElementById('updating-with-number-attribute')
+					updatingComponent.setAttribute('value', 1.14)
+					await animationFrame()
+					const valueAttribute = updatingComponent.querySelector('input').value
+					assert.equal(valueAttribute, '1', 'Should update value attribute of input element from setting value attribute and parse it as defined')
+				})
+
+				it('should remove class when boolean attribute removed', async function () {
+					const updatingComponent = document.getElementById('updating-with-boolean-attribute')
+					updatingComponent.removeAttribute('selected')
+					await animationFrame()
+					const className = updatingComponent.querySelector('h1').className
+					assert.equal(className, '', 'Should remove class from removing selected attribute')
+				})
+
+				it('should update when state is set', async function () {
+					const updatingComponent = document.getElementById('updating-with-string-attribute')
+					updatingComponent.set('heading', 'Hello from State')
+					await animationFrame()
+					const textContent = normalizeText(updatingComponent.querySelector('h1').textContent)
+					assert.equal(textContent, 'Hello from State', 'Should update text content from setting heading state')
+				})
+			})
+				
+			describe('Orphan child component', function () {
+
+				it('should do nothing at all', async function () {
+					const orphanComponent = document.getElementById('orphan')
+					await animationFrame()
+					const headingContent = normalizeText(orphanComponent.querySelector('h1').textContent)
+					const textContent = normalizeText(orphanComponent.querySelector('p').textContent)
+					assert.equal(headingContent, 'Hello from Server', 'Should not change server-side rendered heading')
+					assert.equal(textContent, 'Text from Server', 'Should not change server-side rendered text')
+				})
+
+			})
+
+			describe('Child component', function () {
+
+				it('should receive state from attribute of parent component', async function () {
+					const childComponent = document.getElementById('child')
+					await customElements.whenDefined(childComponent.localName)
+					const headingContent = childComponent.querySelector('h1').textContent
+					assert.equal(headingContent, 'Hello from Attribute', 'Should have initial heading from attribute of parent component')
+				})
+
+				it('should receive derived state from attribute of parent component', async function () {
+					const childComponent = document.getElementById('child')
+					await customElements.whenDefined(childComponent.localName)
+					const textContent = normalizeText(childComponent.querySelector('p').textContent)
+					assert.equal(textContent, 'Hello from Attribute'.toUpperCase(), 'Should have initial text derived from attribute of parent component')
+				})
+
+				it('should receive passed and derived states from changed attribute of parent component', async function () {
+					const parentComponent = document.getElementById('parent')
+					const childComponent = document.getElementById('child')
+					parentComponent.setAttribute('heading', 'Hello from Changed Attribute')
+					await animationFrame()
+					const headingContent = normalizeText(childComponent.querySelector('h1').textContent)
+					const textContent = normalizeText(childComponent.querySelector('p').textContent)
+					assert.equal(headingContent, 'Hello from Changed Attribute', 'Should have changed heading from attribute of parent component')
+					assert.equal(textContent, 'Hello from Changed Attribute'.toUpperCase(), 'Should have changed text derived from attribute of parent component')
+				})
+
+				it('should change heading if inherited state is set', async function () {
+					const parentComponent = document.getElementById('parent')
+					const childComponent = document.getElementById('child')
+					parentComponent.set('heading', 'Hello from State on Parent')
+					await animationFrame()
+					const headingContent = childComponent.querySelector('h1').textContent
+					assert.equal(headingContent, 'Hello from State on Parent', 'Should have changed heading from state of parent component')
+				})
+
+			})
+
+			describe('My counter', function () {
+
+				it('should increment and decrement', async function () {
+					const counter = document.querySelector('my-counter')
+					const decrement = counter.querySelector('.decrement')
+					const increment = counter.querySelector('.increment')
+					const value = counter.querySelector('.value')
+					assert.equal(counter.get('value'), 42, 'Should have initial value from attribute')
+					assert.equal(normalizeText(value.textContent), '42', 'Should have initial textContent from attribute')
+					decrement.click()
+					assert.equal(counter.get('value'), 41, 'Should decrement value')
+					await animationFrame()
+					assert.equal(normalizeText(value.textContent), '41', 'Should have updated textContent from decrement')
+					increment.click()
+					assert.equal(counter.get('value'), 42, 'Should increment value')
+					await animationFrame()
+					assert.equal(normalizeText(value.textContent), '42', 'Should have updated textContent from increment')
+				})
+
+				it('should update derived values', async function () {
+					const counter = document.querySelector('my-counter')
+					const decrement = counter.querySelector('.decrement')
+					const parity = counter.querySelector('.parity')
+					const double = counter.querySelector('.double')
+					assert.equal(normalizeText(parity.textContent), 'even', 'Should have derived parity textContent from attribute')
+					assert.equal(normalizeText(double.textContent), '84', 'Should have derived double textContent from attribute')
+					decrement.click()
+					await animationFrame()
+					assert.equal(normalizeText(parity.textContent), 'odd', 'Should have changed derived parity textContent')
+					assert.equal(normalizeText(double.textContent), '82', 'Should have decremented derived double textContent')
+				})
+
+			})
+
+			describe('Greeting Configurator', function () {
+
+				it('should display greeting', async function () {
+					const configurator = document.querySelector('greeting-configurator')
+					const helloWorld = configurator.querySelector('hello-world')
+					const greeting = helloWorld.querySelector('p')
+					assert.equal(normalizeText(greeting.textContent), 'Hello Jane', 'Should have initial greeting')
+					helloWorld.set('greeting', 'Hi')
+					await animationFrame()
+					assert.equal(normalizeText(greeting.textContent), 'Hi Jane', 'Should have updated greeting from state')
+				})
+
+				it('should update name if first name changes', async function () {
+					const configurator = document.querySelector('greeting-configurator')
+					const first = configurator.querySelector('.first')
+					const input = first.querySelector('input')
+					const helloWorld = configurator.querySelector('hello-world')
+					const greeting = helloWorld.querySelector('p')
+					input.value = 'Esther'
+					input.dispatchEvent(new Event('change'))
+					await animationFrame()
+					assert.equal(normalizeText(greeting.textContent), 'Hi Esther', 'Should update if first name changes')
+				})
+
+				it('should not update name if last name changes', async function () {
+					const configurator = document.querySelector('greeting-configurator')
+					const last = configurator.querySelector('.last')
+					const input = last.querySelector('input')
+					const helloWorld = configurator.querySelector('hello-world')
+					const greeting = helloWorld.querySelector('p')
+					input.value = 'Brunner'
+					input.dispatchEvent(new Event('change'))
+					await animationFrame()
+					assert.equal(normalizeText(greeting.textContent), 'Hi Esther', 'Should not update if last name changes')
+				})
+
+				it('should update greeting if use fullname is checked or unchecked', async function () {
+					const configurator = document.querySelector('greeting-configurator')
+					const fullname = configurator.querySelector('input-checkbox')
+					const input = fullname.querySelector('input')
+					const helloWorld = configurator.querySelector('hello-world')
+					const greeting = helloWorld.querySelector('p')
+					input.checked = true
+					input.dispatchEvent(new Event('change'))
+					await animationFrame()
+					assert.equal(normalizeText(greeting.textContent), 'Hi Esther Brunner', 'Should update if use fullname is checked')
+					input.checked = false
+					input.dispatchEvent(new Event('change'))
+					await animationFrame()
+					assert.equal(normalizeText(greeting.textContent), 'Hi Esther', 'Should update if use fullname is unchecked')
+				})
+
+			})
+
+			describe('Lazy Load', function () {
+
+				it('should display loading status initially', function () {
+					const lazyComponent = document.getElementById('lazy-success')
+					assert.equal(normalizeText(lazyComponent.querySelector('.loading').textContent), 'Loading...')
+				})
+
+				it('should display lazy loaded content', async function () {
+					const lazyComponent = document.getElementById('lazy-success')
+					await wait(1600)
+					const shadow = lazyComponent.shadowRoot
+					assert.isDefined(shadow, 'Should have a shadow root')
+					assert.equal(normalizeText(shadow.querySelector('p').textContent), 'Lazy loaded content', 'Should display lazy loaded content')
+					assert.equal(lazyComponent.querySelector('.loading'), null, 'Should no longer have a loading status')
+					assert.equal(lazyComponent.querySelector('.error'), null, 'Should no longer have an error container')
+				})
+
+				it('should display error message', async function () {
+					const lazyComponent = document.getElementById('lazy-error')
+					await wait(1600)
+					assert.equal(normalizeText(lazyComponent.querySelector('.error').textContent), 'Not Found', 'Should display error message')
+					assert.equal(lazyComponent.querySelector('.loading'), null, 'Should no longer have a loading status')
+					assert.equal(lazyComponent.shadowRoot, null, 'Should not have a shadow root')
+				})
+
+			})
+		})
+	</script>
+</body>
+</html>

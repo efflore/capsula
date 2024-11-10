@@ -1,11 +1,11 @@
-import { type Signal, computed, isSignal, isState, state } from "@efflore/cause-effect"
-import { result, isResult} from "@efflore/flow-sure"
+import { type Signal, UNSET, computed, isSignal, isState, state } from "@efflore/cause-effect"
+import { result, isResult } from "@efflore/flow-sure"
 
-import { isDefinedObject, isFunction, isString } from "./util"
+import { isDefinedObject, isFunction } from "./util"
 import { elementName, log, LOG_ERROR, valueString } from "./log"
 import { UI } from "./ui"
 import { parse } from "./parse"
-import type { UnknownContext } from "./context"
+import { type UnknownContext, useContext } from "./context"
 
 /* === Types === */
 
@@ -55,7 +55,7 @@ export class Capsula extends HTMLElement {
 	/**
 	 * @since 0.9.0
 	 * @property {ElementInternals | undefined} internals - native internal properties of the custom element
-	 */
+	 * /
 	internals: ElementInternals | undefined
 
 	/**
@@ -103,8 +103,8 @@ export class Capsula extends HTMLElement {
      */
 	connectedCallback(): void {
 		if (Bun.env.DEV_MODE) {
-			if (isString(this.getAttribute('debug'))) this.debug = true
-			if (this.debug) log(elementName(this), 'Connected')
+			this.debug = this.hasAttribute('debug')
+			if (this.debug) log(this, 'Connected')
 		}
 		Object.entries((this.constructor as typeof Capsula).states)
 			.forEach(([name, source]) => {
@@ -113,16 +113,17 @@ export class Capsula extends HTMLElement {
 					: source
 				this.set(name, value, false)
 			})
+		useContext(this)
 	}
 
 	disconnectedCallback(): void {
 		if (Bun.env.DEV_MODE && this.debug)
-			log(elementName(this), 'Disconnected')
+			log(this, 'Disconnected')
 	}
 
 	adoptedCallback(): void {
 		if (Bun.env.DEV_MODE && this.debug)
-			log(elementName(this), 'Adopted')
+			log(this, 'Adopted')
     }
 
 	/**
@@ -168,36 +169,45 @@ export class Capsula extends HTMLElement {
 		value: T | Signal<T> | ((old?: T) => T),
 		update: boolean = true
 	): void {
-		if (Bun.env.DEV_MODE && this.debug)
-			log(value, `Set ${update ? '' : 'default '}value of state ${valueString(key)} in ${elementName(this)} to`)
+		let op: string;
 
 		// State does not exist => create new state
 		if (!this.signals.has(key)) {
+			op = 'Create'
 			this.signals.set(
 				key,
 				isSignal(value) ? value
-				    : isFunction(value) && !value.length ? computed(value)
+					: isFunction(value) ? computed(value, true)
 					: state(value)
 			)
 
-		// State already exists => update state
-		} else if (update) {
-			const state = this.signals.get(key)
+		// Early return if state exists and update is false
+		} else if (!update) {
+			return
+		} else {
+			const s = this.signals.get(key)
 
 			// Value is a Signal => replace state with new signal
 			if (isSignal(value)) {
-				if (Bun.env.DEV_MODE && this.debug)
-					log(value.get(), `Existing state ${valueString(key)} in ${elementName(this)} is replaced by new signal`)
+				op = 'Replace'
 				this.signals.set(key, value)
+				if (isState(s)) s.set(UNSET) // clear previous state so watchers re-subscribe to new signal
 
 			// Value is not a Signal => set existing state to new value
 			} else {
-				if (isState(state))
-					state.set(value)
-				else
+				if (isState(s)) {
+					op = 'Update'
+					s.set(value)
+				} else {
 					log(value, `Computed state ${valueString(key)} in ${elementName(this)} cannot be set`, LOG_ERROR)
+					return
+				}
 			}
 		}
+
+		if (Bun.env.DEV_MODE && this.debug)
+			log(value, `${op} state ${valueString(key)} in ${elementName(this)}`)
+
 	}
 
 	/**

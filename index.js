@@ -1,1 +1,657 @@
-var e=($)=>typeof $==="function",W$=($)=>e($)&&/^async\s+/.test($.toString()),f=($)=>(B)=>B instanceof $,p=f(Error),Y$=f(Promise);var Q$="Computed",M=($,B)=>{B=B??W$($);let K=new Set,Z,z=null,J=!0,W=()=>{if(J=!0,B)c(K)},A=()=>{try{return $()}catch(V){return p(V)?V:new Error(`Error during reactive computation: ${V}`)}},X=(V)=>{J=!1,Z=V,z=null},z$=(V)=>{J=!0,z=V},J$=(V)=>p(V)?z$(V):X(V),V$={[Symbol.toStringTag]:Q$,get:()=>{if(m(K),!B||J)i(()=>{let V=A();Y$(V)?V.then(J$).catch(z$):J$(V)},W);if(p(z))throw z;return Z},map:(V)=>M(()=>V(V$.get()))};return V$},$$=($)=>!!$&&typeof $==="object"&&$[Symbol.toStringTag]===Q$;var T,T$=!1,P$=new Set,F=($)=>P($)||$$($),m=($)=>{if(T)$.add(T)},c=($)=>$.forEach((B)=>T$?P$.add(B):B()),i=($,B)=>{let K=T;T=B,$(),T=K};class o{$;watchers=new Set;constructor($){this.value=$}get(){return m(this.watchers),this.value}set($){let B=e($)?$(this.value):$;if(Object.is(this.value,B))return;this.value=B,c(this.watchers)}map($){return M(()=>$(this.get()))}}var B$=($)=>new o($),P=f(o);var v=($)=>{let B=()=>i(()=>{try{$()}catch(K){console.error(K)}},B);B()};var I=($)=>typeof $==="function";var y=($)=>(B)=>B instanceof $,s=($)=>y(Error)($),L=function(){return this};var H=($)=>$==null?j():X$($)?$:O($),X$=($)=>b($)||R($);class U{static instance=new U;get=()=>{return}}var w=U.prototype;w.map=w.chain=w.filter=w.guard=w.catch=L;w.or=($)=>H($());w.match=function($){return I($.Nil)?$.Nil():this};var j=()=>U.instance,R=($)=>$===U.instance;class S{$;constructor($){this.value=$}get(){return this.value}}var N=S.prototype;N.map=function($){return new S($(this.value))};N.chain=function($){return $(this.value)};N.filter=N.guard=function($){return $(this.value)?this:j()};N.or=N.catch=L;N.match=function($){return I($.Ok)?$.Ok(this.value):this};var O=($)=>new S($),b=y(S);class _{$;constructor($){this.error=$}get(){throw this.error}}var C=_.prototype;C.map=C.chain=L;C.filter=C.guard=()=>j();C.or=($)=>H($());C.catch=function($){return $(this.error)};C.match=function($){return I($.Err)?$.Err(this.error):this};var n=($)=>new _(s($)?$:new Error(String($))),K$=y(_);var E=($,...B)=>{try{return A$($(...B))}catch(K){return n(K)}};var r=($)=>b($)||R($)||K$($),A$=($)=>$==null?j():r($)?$:s($)?n($):O($);var Y=($)=>typeof $==="function",u=($)=>!!$&&typeof $==="object",y$=($)=>typeof $==="number",q=($)=>typeof $==="string",R$=($)=>typeof $==="symbol",H$=($)=>q($)||R$($)||y$($);var O$="debug";var b$="warn",D="error",_$=($)=>$?`#${$}`:"",E$=($)=>$.length?`.${Array.from($).join(".")}`:"",j$=($)=>`<${$.localName}${_$($.id)}${E$($.classList)}>`,l=($)=>q($)?`"${$}"`:u($)?JSON.stringify($):String($),x=($,B,K=O$)=>{if(!1==="true"||[D,b$].includes(K))console[K](B,$);return $};var k$=($,B)=>{return H$(B)?$.signals.get(B):F(B)?B:Y(B)&&!B.length?M(B):void 0};class k{$;B;constructor($,B=[$]){this.host=$;this.targets=B}on($,B){return this.targets.forEach((K)=>K.addEventListener($,B)),this}off($,B){return this.targets.forEach((K)=>K.removeEventListener($,B)),this}pass($){return this.targets.forEach((B)=>{if(B instanceof g)this.host.constructor.registry.whenDefined(B.tagName).then(()=>{Object.entries($).forEach(([K,Z])=>{let z=k$(this.host,Z);if(z)B.set(K,z);else x(Z,`Invalid source for state ${l(K)}`,D)})});else x(B,"Target is not a Capsula instance",D)}),this}sync(...$){return this.targets.forEach((B)=>$.forEach((K)=>K(this.host,B))),this}}var h=($,B,K,Z=void 0)=>{let z=$.constructor.states[B];return Y(z)&&!!z.length?z(K,$,Z):K},v4=($)=>$!=null,s4=($)=>H($).map(parseInt).filter(Number.isFinite).get(),n4=($)=>H($).map(parseFloat).filter(Number.isFinite).get(),r4=($)=>$,u4=($)=>(B)=>H(B).filter((K)=>$.includes(K.toLowerCase())).get(),l4=($)=>E(()=>$?JSON.parse($):null).match({Err:(B)=>{x(B,"Failed to parse JSON",D);return}}).get();class g extends HTMLElement{static registry=customElements;static states={};static observedAttributes;static consumedContexts;static providedContexts;static define($){E(()=>g.registry.define($,this)).match({Err:(B)=>x($,B.message,D),Ok:()=>!1})}signals=new Map;internals;self=new k(this);root=this.shadowRoot||this;debug=!1;attributeChangedCallback($,B,K){if(K===B)return;this.set($,h(this,$,K,B))}connectedCallback(){Object.entries(this.constructor.states).forEach(([$,B])=>{let K=Y(B)?h(this,$,this.getAttribute($)??void 0,void 0):B;this.set($,K,!1)})}disconnectedCallback(){}adoptedCallback(){}has($){return this.signals.has($)}get($){let B=(Z)=>!u(Z)?Z:Y(Z)?B(Z()):F(Z)||r(Z)?B(Z.get()):Z;return B(this.signals.get($))}set($,B,K=!0){if(!this.signals.has($))this.signals.set($,F(B)?B:Y(B)&&!B.length?M(B):B$(B));else if(K){let Z=this.signals.get($);if(F(B))this.signals.set($,B);else if(P(Z))Z.set(B);else x(B,`Computed state ${l($)} in ${j$(this)} cannot be set`,D)}}delete($){return this.signals.delete($)}first($){let B=this.root.querySelector($);return new k(this,B?[B]:[])}all($){return new k(this,Array.from(this.root.querySelectorAll($)))}}var D$="context-request";class M$ extends Event{$;B;K;constructor($,B,K=!1){super(D$,{bubbles:!0,composed:!0});this.context=$;this.callback=B;this.subscribe=K}}var g$=($)=>{let B=$.constructor,K=B.consumedContexts||[];setTimeout(()=>{for(let z of K)$.dispatchEvent(new M$(z,(J)=>$.set(String(z),J)))});let Z=B.providedContexts||[];if(!Z.length)return!1;return $.addEventListener(D$,(z)=>{let{context:J,callback:W}=z;if(!Z.includes(J)||!Y(W))return;z.stopPropagation(),W($.signals.get(String(J)))}),!0};if(!("requestAnimationFrame"in globalThis))globalThis.requestAnimationFrame=($)=>setTimeout($,16);var a=new Map,d=[],t,x$=()=>{t=null,d.forEach(($)=>$()),d=[],a.clear()},h$=()=>{if(t)cancelAnimationFrame(t);t=requestAnimationFrame(x$)};queueMicrotask(x$);var Q=($,B)=>new Promise((K,Z)=>{let z=()=>{try{K($())}catch(J){Z(J)}};if(B){let[J,W]=B;if(!a.has(J))a.set(J,new Map);let A=a.get(J);if(A.has(W)){let X=d.indexOf($);if(X>-1)d.splice(X,1)}A.set(W,z)}d.push(z),h$()});var G$=($)=>$.nodeType===Node.COMMENT_NODE,d$=($)=>!/^on/i.test($),f$=($)=>{if(/^(mailto|tel):/i.test($))return!0;if($.includes("://"))try{let B=new URL($,window.location.origin);return!["http:","https:","ftp:"].includes(B.protocol)}catch(B){return!0}return!0},Z$=($,B,K)=>{if(!d$(B))throw new Error(`Unsafe attribute: ${B}`);if(!f$(K))throw new Error(`Unsafe URL for ${B}: ${K}`);$.setAttribute(B,K)};var F$=($,B,K={},Z)=>Q(()=>{let z=document.createElement(B);for(let[J,W]of Object.entries(K))Z$(z,J,W);if(Z)z.textContent=Z;return $.append(z),z},[$,"e"]),I$=($)=>Q(()=>{return $.remove(),null},[$,"r"]),w$=($,B)=>Q(()=>{return Array.from($.childNodes).filter((K)=>!G$(K)).forEach((K)=>K.remove()),$.append(document.createTextNode(B)),$},[$,"t"]),N$=($,B,K)=>Q(()=>{return Z$($,B,K),$},[$,`a:${B}`]),C$=($,B)=>Q(()=>{return $.removeAttribute(B),$},[$,`a:${B}`]),L$=($,B,K)=>Q(()=>{return $.toggleAttribute(B,K),$},[$,`a:${B}`]),U$=($,B,K)=>Q(()=>{return $.classList.toggle(B,K),$},[$,`c:${B}`]),S$=($,B,K)=>Q(()=>{return $.style.setProperty(B,K),$},[$,`s:${B}`]),q$=($,B)=>Q(()=>{return $.style.removeProperty(B),$},[$,`s:${B}`]);var NB=($,B=$)=>(K,Z)=>v(()=>{Z.dispatchEvent(new CustomEvent($,{detail:K.get(B),bubbles:!0}))}),G=($,B)=>(K,Z)=>{let{read:z,update:J}=B,W=z(Z);if(!Y($)){let A=q($)&&q(W)?h(K,$,W):W;K.set($,A,!1)}v(()=>{let A=z(Z),X=Y($)?$(A):K.get($);if(!Object.is(X,A)){if(X===null&&B.delete)B.delete(Z);else if(X==null&&W)J(Z,W);else if(X!=null)J(Z,X)}})},CB=($,B)=>G(B,{read:()=>null,update:(K,Z)=>F$(K,$,Z)}),LB=($)=>G($,{read:(B)=>B!=null,update:(B,K)=>K?I$(B):Promise.resolve(null)}),UB=($)=>G($,{read:(B)=>B.textContent,update:(B,K)=>w$(B,K)}),SB=($,B=$)=>G(B,{read:(K)=>K[$],update:(K,Z)=>K[$]=Z}),qB=($,B=$)=>G(B,{read:(K)=>K.getAttribute($),update:(K,Z)=>N$(K,$,Z),delete:(K)=>C$(K,$)}),TB=($,B=$)=>G(B,{read:(K)=>K.hasAttribute($),update:(K,Z)=>L$(K,$,Z)}),PB=($,B=$)=>G(B,{read:(K)=>K.classList.contains($),update:(K,Z)=>U$(K,$,Z)}),yB=($,B=$)=>G(B,{read:(K)=>K.style.getPropertyValue($),update:(K,Z)=>S$(K,$,Z),delete:(K)=>q$(K,$)});export{g$ as useContext,G as updateElement,PB as toggleClass,TB as toggleAttribute,UB as setText,yB as setStyle,SB as setProperty,qB as setAttribute,LB as removeElement,h as parse,NB as emit,CB as createElement,r4 as asString,n4 as asNumber,l4 as asJSON,s4 as asInteger,u4 as asEnum,v4 as asBoolean,g as Capsula};
+// node_modules/@efflore/cause-effect/lib/util.ts
+var isFunction = (value) => typeof value === "function";
+var isAsyncFunction = (value) => isFunction(value) && /^async\s+/.test(value.toString());
+var isInstanceOf = (type) => (value) => value instanceof type;
+var isError = /* @__PURE__ */ isInstanceOf(Error);
+var isPromise = /* @__PURE__ */ isInstanceOf(Promise);
+
+// node_modules/@efflore/cause-effect/lib/computed.ts
+var TYPE_COMPUTED = "Computed";
+var computed = (fn, memo) => {
+  memo = memo ?? isAsyncFunction(fn);
+  const watchers = new Set;
+  let value;
+  let error = null;
+  let stale = true;
+  const mark = () => {
+    stale = true;
+    if (memo)
+      notify(watchers);
+  };
+  const compute = () => {
+    try {
+      return fn(value);
+    } catch (e) {
+      return isError(e) ? e : new Error(`Error during reactive computation: ${e}`);
+    }
+  };
+  const handleOk = (v) => {
+    stale = false;
+    value = v;
+    error = null;
+  };
+  const handleErr = (e) => {
+    stale = true;
+    error = e;
+  };
+  const update = (v) => isError(v) ? handleErr(v) : handleOk(v);
+  const c = {
+    [Symbol.toStringTag]: TYPE_COMPUTED,
+    get: () => {
+      subscribe(watchers);
+      if (!memo || stale)
+        watch(() => {
+          const result = compute();
+          isPromise(result) ? result.then(update).catch(handleErr) : update(result);
+        }, mark);
+      if (isError(error))
+        throw error;
+      return value;
+    },
+    map: (fn2) => computed(() => fn2(c.get()))
+  };
+  return c;
+};
+var isComputed = (value) => !!value && typeof value === "object" && value[Symbol.toStringTag] === TYPE_COMPUTED;
+
+// node_modules/@efflore/cause-effect/lib/signal.ts
+var active;
+var batching = false;
+var pending = new Set;
+var isSignal = (value) => isState(value) || isComputed(value);
+var subscribe = (watchers) => {
+  if (active)
+    watchers.add(active);
+};
+var notify = (watchers) => watchers.forEach((n) => batching ? pending.add(n) : n());
+var watch = (fn, notify2) => {
+  const prev = active;
+  active = notify2;
+  fn();
+  active = prev;
+};
+var batch = (fn) => {
+  batching = true;
+  fn();
+  batching = false;
+  pending.forEach((n) => n());
+  pending.clear();
+};
+
+// node_modules/@efflore/cause-effect/lib/state.ts
+var UNSET = Symbol();
+
+class State {
+  value;
+  watchers = new Set;
+  constructor(value) {
+    this.value = value;
+  }
+  get() {
+    subscribe(this.watchers);
+    return this.value;
+  }
+  set(value) {
+    if (UNSET !== value) {
+      const newValue = isFunction(value) ? value(this.value) : value;
+      if (Object.is(this.value, newValue))
+        return;
+      this.value = newValue;
+    }
+    notify(this.watchers);
+    if (UNSET === value)
+      this.watchers.clear();
+  }
+  map(fn) {
+    return computed(() => fn(this.get()));
+  }
+}
+var state = (value) => new State(value);
+var isState = /* @__PURE__ */ isInstanceOf(State);
+// node_modules/@efflore/cause-effect/lib/effect.ts
+var effect = (fn) => {
+  const run = () => watch(() => {
+    try {
+      fn();
+    } catch (error) {
+      console.error(error);
+    }
+  }, run);
+  run();
+};
+// node_modules/@efflore/flow-sure/lib/util.ts
+var isFunction2 = (value) => typeof value === "function";
+var isInstanceOf2 = (type) => (value) => value instanceof type;
+var isError2 = (value) => isInstanceOf2(Error)(value);
+var noOp = function() {
+  return this;
+};
+
+// node_modules/@efflore/flow-sure/lib/maybe.ts
+var maybe = (value) => value == null ? nil() : isMaybe(value) ? value : ok(value);
+var isMaybe = (value) => isOk(value) || isNil(value);
+
+// node_modules/@efflore/flow-sure/lib/nil.ts
+class Nil {
+  static instance = new Nil;
+  get = () => {
+    return;
+  };
+}
+var nilProto = Nil.prototype;
+nilProto.map = nilProto.chain = nilProto.filter = nilProto.guard = nilProto.catch = noOp;
+nilProto.or = (fn) => maybe(fn());
+nilProto.match = function(cases) {
+  return isFunction2(cases.Nil) ? cases.Nil() : this;
+};
+var nil = () => Nil.instance;
+var isNil = (value) => value === Nil.instance;
+
+// node_modules/@efflore/flow-sure/lib/ok.ts
+class Ok {
+  value;
+  constructor(value) {
+    this.value = value;
+  }
+  get() {
+    return this.value;
+  }
+}
+var okProto = Ok.prototype;
+okProto.map = function(fn) {
+  return new Ok(fn(this.value));
+};
+okProto.chain = function(fn) {
+  return fn(this.value);
+};
+okProto.filter = okProto.guard = function(fn) {
+  return fn(this.value) ? this : nil();
+};
+okProto.or = okProto.catch = noOp;
+okProto.match = function(cases) {
+  return isFunction2(cases.Ok) ? cases.Ok(this.value) : this;
+};
+var ok = (value) => new Ok(value);
+var isOk = /* @__PURE__ */ isInstanceOf2(Ok);
+// node_modules/@efflore/flow-sure/lib/err.ts
+class Err {
+  error;
+  constructor(error) {
+    this.error = error;
+  }
+  get() {
+    throw this.error;
+  }
+}
+var errProto = Err.prototype;
+errProto.map = errProto.chain = noOp;
+errProto.filter = errProto.guard = () => nil();
+errProto.or = (fn) => maybe(fn());
+errProto.catch = function(fn) {
+  return fn(this.error);
+};
+errProto.match = function(cases) {
+  return isFunction2(cases.Err) ? cases.Err(this.error) : this;
+};
+var err = (error) => new Err(isError2(error) ? error : new Error(String(error)));
+var isErr = /* @__PURE__ */ isInstanceOf2(Err);
+// node_modules/@efflore/flow-sure/lib/result.ts
+var result = (fn, ...args) => {
+  try {
+    return toResult(fn(...args));
+  } catch (error) {
+    return err(error);
+  }
+};
+var asyncResult = async (fn, ...args) => {
+  try {
+    return toResult(await fn(...args));
+  } catch (error) {
+    return err(error);
+  }
+};
+var flow = async (...fns) => {
+  let res = isFunction2(fns[0]) ? nil() : toResult(fns.shift());
+  for (const fn of fns) {
+    if (isErr(res))
+      break;
+    if (!isFunction2(fn))
+      return err(new TypeError("Expected a function in flow"));
+    res = /^async\s+/.test(fn.toString()) ? await asyncResult(async () => fn(res.get())) : result(fn, res.get());
+  }
+  return res;
+};
+var isResult = (value) => isOk(value) || isNil(value) || isErr(value);
+var toResult = (value) => value == null ? nil() : isResult(value) ? value : isError2(value) ? err(value) : ok(value);
+var fromResult = (value) => isErr(value) ? value.error : isOk(value) || isNil(value) ? value.get() : value;
+// lib/util.ts
+var isFunction3 = (value) => typeof value === "function";
+var isDefinedObject = (value) => !!value && typeof value === "object";
+var isNumber = (value) => typeof value === "number";
+var isString = (value) => typeof value === "string";
+var isSymbol = (value) => typeof value === "symbol";
+var isPropertyKey = (value) => isString(value) || isSymbol(value) || isNumber(value);
+
+// lib/log.ts
+var LOG_DEBUG = "debug";
+var LOG_ERROR = "error";
+var idString = (id) => id ? `#${id}` : "";
+var classString = (classList) => classList.length ? `.${Array.from(classList).join(".")}` : "";
+var elementName = (el) => `<${el.localName}${idString(el.id)}${classString(el.classList)}>`;
+var valueString = (value) => isString(value) ? `"${value}"` : isDefinedObject(value) ? JSON.stringify(value) : String(value);
+var log = (value, msg, level = LOG_DEBUG) => {
+  if (true)
+    console[level](msg, value);
+  return value;
+};
+
+// lib/ui.ts
+var fromStateLike = (host, source) => {
+  return isPropertyKey(source) ? host.signals.get(source) : isSignal(source) ? source : isFunction3(source) ? computed(source.bind(host), true) : undefined;
+};
+
+class UI {
+  host;
+  targets;
+  constructor(host, targets = [host]) {
+    this.host = host;
+    this.targets = targets;
+  }
+  on(event, listener) {
+    this.targets.forEach((target) => target.addEventListener(event, listener));
+    return this;
+  }
+  off(event, listener) {
+    this.targets.forEach((target) => target.removeEventListener(event, listener));
+    return this;
+  }
+  pass(states) {
+    this.targets.forEach(async (target) => {
+      await Capsula.registry.whenDefined(target.localName);
+      if (target instanceof Capsula) {
+        Object.entries(states).forEach(([name, source]) => {
+          const value = fromStateLike(this.host, source);
+          if (value)
+            target.set(name, value);
+          else
+            log(source, `Invalid source for state ${valueString(name)}`, LOG_ERROR);
+        });
+      } else
+        log(target, `Target is not a Capsula`, LOG_ERROR);
+    });
+    return this;
+  }
+  sync(...fns) {
+    this.targets.forEach((target, index) => fns.forEach((fn) => fn(this.host, target, index)));
+    return this;
+  }
+}
+
+// lib/parse.ts
+var parse = (host, name, value, old = undefined) => {
+  const parser = host.constructor.states[name];
+  return isFunction3(parser) && !!parser.length ? parser(value, host, old) : value;
+};
+var asBoolean = (value) => value != null;
+var asInteger = (value) => maybe(value).map(parseInt).filter(Number.isFinite).get();
+var asNumber = (value) => maybe(value).map(parseFloat).filter(Number.isFinite).get();
+var asString = (value) => value;
+var asEnum = (valid) => (value) => maybe(value).filter((v) => valid.includes(v.toLowerCase())).get();
+var asJSON = (value) => result(() => value ? JSON.parse(value) : null).match({
+  Err: (error) => {
+    log(error, "Failed to parse JSON", LOG_ERROR);
+    return;
+  }
+}).get();
+
+// lib/context.ts
+var CONTEXT_REQUEST = "context-request";
+
+class ContextRequestEvent extends Event {
+  context;
+  callback;
+  subscribe2;
+  constructor(context, callback, subscribe2 = false) {
+    super(CONTEXT_REQUEST, {
+      bubbles: true,
+      composed: true
+    });
+    this.context = context;
+    this.callback = callback;
+    this.subscribe = subscribe2;
+  }
+}
+var useContext = (host) => {
+  const proto = host.constructor;
+  const consumed = proto.consumedContexts || [];
+  setTimeout(() => {
+    for (const context of consumed)
+      host.dispatchEvent(new ContextRequestEvent(context, (value) => host.set(String(context), value)));
+  });
+  const provided = proto.providedContexts || [];
+  if (!provided.length)
+    return false;
+  host.addEventListener(CONTEXT_REQUEST, (e) => {
+    const { context, callback } = e;
+    if (!provided.includes(context) || !isFunction3(callback))
+      return;
+    e.stopPropagation();
+    callback(host.signals.get(String(context)));
+  });
+  return true;
+};
+
+// lib/capsula.ts
+class Capsula extends HTMLElement {
+  static registry = customElements;
+  static states = {};
+  static observedAttributes;
+  static consumedContexts;
+  static providedContexts;
+  static define(tag) {
+    result(() => Capsula.registry.define(tag, this)).match({
+      Err: (error) => log(tag, error.message, LOG_ERROR),
+      Ok: () => log(tag, "Registered custom element")
+    });
+  }
+  signals = new Map;
+  self = new UI(this);
+  root = this.shadowRoot || this;
+  debug = false;
+  attributeChangedCallback(name, old, value) {
+    if (value === old)
+      return;
+    if (this.debug)
+      log(`${valueString(old)} => ${valueString(value)}`, `Attribute "${name}" of ${elementName(this)} changed`);
+    this.set(name, parse(this, name, value, old));
+  }
+  connectedCallback() {
+    if (true) {
+      this.debug = this.hasAttribute("debug");
+      if (this.debug)
+        log(this, "Connected");
+    }
+    Object.entries(this.constructor.states).forEach(([name, source]) => {
+      const value = isFunction3(source) ? parse(this, name, this.getAttribute(name) ?? undefined, undefined) : source;
+      this.set(name, value, false);
+    });
+    useContext(this);
+  }
+  disconnectedCallback() {
+    if (this.debug)
+      log(this, "Disconnected");
+  }
+  adoptedCallback() {
+    if (this.debug)
+      log(this, "Adopted");
+  }
+  has(key) {
+    return this.signals.has(key);
+  }
+  get(key) {
+    const unwrap = (v) => !isDefinedObject(v) ? v : isFunction3(v) ? unwrap(v()) : isSignal(v) || isResult(v) ? unwrap(v.get()) : v;
+    const value = unwrap(this.signals.get(key));
+    if (this.debug)
+      log(value, `Get current value of state ${valueString(key)} in ${elementName(this)}`);
+    return value;
+  }
+  set(key, value, update = true) {
+    let op;
+    if (!this.signals.has(key)) {
+      op = "Create";
+      this.signals.set(key, isSignal(value) ? value : isFunction3(value) ? computed(value, true) : state(value));
+    } else if (!update) {
+      return;
+    } else {
+      const s = this.signals.get(key);
+      if (isSignal(value)) {
+        op = "Replace";
+        this.signals.set(key, value);
+        if (isState(s))
+          s.set(UNSET);
+      } else {
+        if (isState(s)) {
+          op = "Update";
+          s.set(value);
+        } else {
+          log(value, `Computed state ${valueString(key)} in ${elementName(this)} cannot be set`, LOG_ERROR);
+          return;
+        }
+      }
+    }
+    if (this.debug)
+      log(value, `${op} state ${valueString(key)} in ${elementName(this)}`);
+  }
+  delete(key) {
+    if (this.debug)
+      log(key, `Delete state ${valueString(key)} from ${elementName(this)}`);
+    return this.signals.delete(key);
+  }
+  first(selector) {
+    const element = this.root.querySelector(selector);
+    return new UI(this, element ? [element] : []);
+  }
+  all(selector) {
+    return new UI(this, Array.from(this.root.querySelectorAll(selector)));
+  }
+}
+// node_modules/@efflore/pulse/lib/pulse.ts
+if (!("requestAnimationFrame" in globalThis))
+  globalThis.requestAnimationFrame = (callback) => setTimeout(callback, 16);
+var dedupeMap = new Map;
+var queue = [];
+var requestId;
+var flush = () => {
+  requestId = null;
+  queue.forEach((fn) => fn());
+  queue = [];
+  dedupeMap.clear();
+};
+var requestTick = () => {
+  if (requestId)
+    cancelAnimationFrame(requestId);
+  requestId = requestAnimationFrame(flush);
+};
+queueMicrotask(flush);
+var enqueue = (callback, dedupe) => new Promise((resolve, reject) => {
+  const wrappedCallback = () => {
+    try {
+      resolve(callback());
+    } catch (error) {
+      reject(error);
+    }
+  };
+  if (dedupe) {
+    const [el, op] = dedupe;
+    if (!dedupeMap.has(el))
+      dedupeMap.set(el, new Map);
+    const elementMap = dedupeMap.get(el);
+    if (elementMap.has(op)) {
+      const idx = queue.indexOf(callback);
+      if (idx > -1)
+        queue.splice(idx, 1);
+    }
+    elementMap.set(op, wrappedCallback);
+  }
+  queue.push(wrappedCallback);
+  requestTick();
+});
+var animationFrame = async () => new Promise(requestAnimationFrame);
+// node_modules/@efflore/pulse/lib/util.ts
+var isComment = (node) => node.nodeType === Node.COMMENT_NODE;
+var isSafeAttribute = (attr) => !/^on/i.test(attr);
+var isSafeURL = (value) => {
+  if (/^(mailto|tel):/i.test(value))
+    return true;
+  if (value.includes("://")) {
+    try {
+      const url = new URL(value, window.location.origin);
+      return !["http:", "https:", "ftp:"].includes(url.protocol);
+    } catch (error) {
+      return true;
+    }
+  }
+  return true;
+};
+var safeSetAttribute = (element, attr, value) => {
+  if (!isSafeAttribute(attr))
+    throw new Error(`Unsafe attribute: ${attr}`);
+  value = String(value).trim();
+  if (!isSafeURL(value))
+    throw new Error(`Unsafe URL for ${attr}: ${value}`);
+  element.setAttribute(attr, value);
+};
+
+// node_modules/@efflore/pulse/lib/update.ts
+var ce = (parent, tag, attributes = {}, text) => enqueue(() => {
+  const child = document.createElement(tag);
+  for (const [key, value] of Object.entries(attributes))
+    safeSetAttribute(child, key, value);
+  if (text)
+    child.textContent = text;
+  parent.append(child);
+  return child;
+}, [parent, "e"]);
+var re = (element) => enqueue(() => {
+  element.remove();
+  return null;
+}, [element, "r"]);
+var st = (element, text) => enqueue(() => {
+  Array.from(element.childNodes).filter((node) => !isComment(node)).forEach((node) => node.remove());
+  element.append(document.createTextNode(text));
+  return element;
+}, [element, "t"]);
+var sa = (element, attribute, value) => enqueue(() => {
+  safeSetAttribute(element, attribute, value);
+  return element;
+}, [element, `a:${attribute}`]);
+var ra = (element, attribute) => enqueue(() => {
+  element.removeAttribute(attribute);
+  return element;
+}, [element, `a:${attribute}`]);
+var ta = (element, attribute, value) => enqueue(() => {
+  element.toggleAttribute(attribute, value);
+  return element;
+}, [element, `a:${attribute}`]);
+var tc = (element, token, value) => enqueue(() => {
+  element.classList.toggle(token, value);
+  return element;
+}, [element, `c:${token}`]);
+var ss = (element, property, value) => enqueue(() => {
+  element.style.setProperty(property, value);
+  return element;
+}, [element, `s:${property}`]);
+var rs = (element, property) => enqueue(() => {
+  element.style.removeProperty(property);
+  return element;
+}, [element, `s:${property}`]);
+// lib/effects.ts
+var emit = (event, state2 = event) => (host, target) => effect(() => {
+  target.dispatchEvent(new CustomEvent(event, {
+    detail: host.get(state2),
+    bubbles: true
+  }));
+});
+var updateElement = (state2, updater) => (host, target) => {
+  const { read, update: update2 } = updater;
+  const fallback = read(target);
+  if (!isFunction3(state2)) {
+    const value = isString(state2) && isString(fallback) ? parse(host, state2, fallback) : fallback;
+    host.set(state2, value, false);
+  }
+  effect(() => {
+    const current = read(target);
+    const value = isFunction3(state2) ? state2(current) : host.get(state2);
+    if (!Object.is(value, current)) {
+      if (value === null && updater.delete)
+        updater.delete(target);
+      else if (value == null && fallback)
+        update2(target, fallback);
+      else if (value != null)
+        update2(target, value);
+    }
+  });
+};
+var createElement = (tag, state2) => updateElement(state2, {
+  read: () => null,
+  update: (el, value) => ce(el, tag, value)
+});
+var removeElement = (state2) => updateElement(state2, {
+  read: (el) => el != null,
+  update: (el, value) => value ? re(el) : Promise.resolve(null)
+});
+var setText = (state2) => updateElement(state2, {
+  read: (el) => el.textContent,
+  update: (el, value) => st(el, value)
+});
+var setProperty = (key, state2 = key) => updateElement(state2, {
+  read: (el) => el[key],
+  update: (el, value) => el[key] = value
+});
+var setAttribute = (name, state2 = name) => updateElement(state2, {
+  read: (el) => el.getAttribute(name),
+  update: (el, value) => sa(el, name, value),
+  delete: (el) => ra(el, name)
+});
+var toggleAttribute = (name, state2 = name) => updateElement(state2, {
+  read: (el) => el.hasAttribute(name),
+  update: (el, value) => ta(el, name, value)
+});
+var toggleClass = (token, state2 = token) => updateElement(state2, {
+  read: (el) => el.classList.contains(token),
+  update: (el, value) => tc(el, token, value)
+});
+var setStyle = (prop, state2 = prop) => updateElement(state2, {
+  read: (el) => el.style.getPropertyValue(prop),
+  update: (el, value) => ss(el, prop, value),
+  delete: (el) => rs(el, prop)
+});
+export {
+  useContext,
+  updateElement,
+  toggleClass,
+  toggleAttribute,
+  toResult,
+  state,
+  setText,
+  setStyle,
+  setProperty,
+  setAttribute,
+  result,
+  removeElement,
+  parse,
+  ok,
+  nil,
+  maybe,
+  isState,
+  isSignal,
+  isResult,
+  isOk,
+  isNil,
+  isMaybe,
+  isErr,
+  isComputed,
+  fromResult,
+  flow,
+  err,
+  enqueue,
+  emit,
+  effect,
+  createElement,
+  computed,
+  batch,
+  asyncResult,
+  asString,
+  asNumber,
+  asJSON,
+  asInteger,
+  asEnum,
+  asBoolean,
+  animationFrame,
+  UNSET,
+  State,
+  Ok,
+  Nil,
+  Err,
+  Capsula
+};

@@ -31,8 +31,9 @@ export declare class Capsula extends HTMLElement {
     /**
      * @since 0.9.0
      * @property {ElementInternals | undefined} internals - native internal properties of the custom element
-     */
-    internals: ElementInternals | undefined;
+     * /
+    internals: ElementInternals | undefined
+
     /**
      * @since 0.8.1
      * @property {UI<Capsula>} self - UI object for this element

@@ -13,7 +13,7 @@ type StateLike<T> = PropertyKey | Signal<T> | (() => T)
 const fromStateLike = <T>(host: Capsula, source: StateLike<T>): Signal<T> | undefined => {
 	return isPropertyKey(source) ? host.signals.get(source)
 	    : isSignal(source) ? source
-		: isFunction(source) &&!source.length ? computed(source)
+		: isFunction(source) ? computed(source.bind(host), true)
 		: undefined
 }
 
@@ -35,29 +35,24 @@ class UI<T extends Element> {
         return this
 	}
 
-	pass(states: Record<string, StateLike<T>>): UI<T> {
-		this.targets.forEach(target => {
+	pass(states: Record<string, StateLike<any>>): UI<T> {
+		this.targets.forEach(async target => {
+			await Capsula.registry.whenDefined(target.localName)
 			if (target instanceof Capsula) {
-				(this.host.constructor as typeof Capsula).registry
-					.whenDefined(target.tagName)
-					.then(() => {
-						Object.entries(states).forEach(([name, source]) => {
-							const value = fromStateLike(this.host, source)
-							if (value)
-								target.set(name, value)
-                            else
-								log(source, `Invalid source for state ${valueString(name)}`, LOG_ERROR)
-                        })
-					})
-			} else {
-				log(target, 'Target is not a Capsula instance', LOG_ERROR)
-			}
+				Object.entries(states).forEach(([name, source]) => {
+					const value = fromStateLike(this.host, source)
+					if (value)
+						target.set(name, value)
+					else
+						log(source, `Invalid source for state ${valueString(name)}`, LOG_ERROR)
+				})
+			} else log(target, `Target is not a Capsula`, LOG_ERROR)
         })
         return this
 	}
 
-	sync(...fns: ((host: Capsula, target: T) => void)[]): UI<T> {
-		this.targets.forEach(target => fns.forEach(fn => fn(this.host, target)))
+	sync(...fns: ((host: Capsula, target: T, index: number) => void)[]): UI<T> {
+		this.targets.forEach((target, index) => fns.forEach(fn => fn(this.host, target, index)))
         return this
 	}
 

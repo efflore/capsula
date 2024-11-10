@@ -66,7 +66,7 @@ const valueString = (value: unknown): string =>
  * @returns {T} - value passed through
  */
 const log = <T>(value: T, msg: string, level: LogLevel = LOG_DEBUG): T => {
-	if (Bun.env.DEV_MODE === 'true' || ([LOG_ERROR, LOG_WARN] as LogLevel[]).includes(level))
+	if (Bun.env.DEV_MODE || ([LOG_ERROR, LOG_WARN] as LogLevel[]).includes(level))
 		console[level](msg, value)
 	return value
 }
