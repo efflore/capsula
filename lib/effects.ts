@@ -22,14 +22,14 @@ type StateKeyOrFunction<T> = PropertyKey | ((v?: T | null) => T)
  * 
  * @since 0.8.3
  * @param {string} event - event name to dispatch
- * @param {StateLike<unknown>} state - state key
+ * @param {StateKeyOrFunction<T>} s - state key or function
  */
-const emit = <E extends Element>(
+const emit = <E extends Element, T>(
 	event: string,
-	state: StateKeyOrFunction<unknown> = event
+	s: StateKeyOrFunction<T> = event
 ) => (host: Capsula, target: E): void => effect(() => {
 		target.dispatchEvent(new CustomEvent(event, {
-			detail: host.get(state),
+			detail: host.get(s),
 			bubbles: true
 		}))
 	})
@@ -38,24 +38,24 @@ const emit = <E extends Element>(
  * Auto-effect for setting properties of a target element according to a given state
  * 
  * @since 0.9.0
- * @param {StateKeyOrFunction<T>} state - state bound to the element property
+ * @param {StateKeyOrFunction<T>} s - state bound to the element property
  * @param {ElementUpdater} updater - updater object containing key, read, update, and delete methods
  */
 const updateElement = <E extends Element, T>(
-	state: StateKeyOrFunction<T>,
+	s: StateKeyOrFunction<T>,
 	updater: ElementUpdater<E, T>
 ) => (host: Capsula, target: E): void => {
 	const { read, update } = updater
 	const fallback = read(target)
-	if (!isFunction(state)) {
-		const value = isString(state) && isString(fallback)
-			? parse(host, state, fallback)
+	if (!isFunction(s)) { // s is PropertyKey
+		const value = isString(s) && isString(fallback)
+			? parse(host, s, fallback)
 			: fallback
-		host.set(state, value, false)
+		host.set(s, value, false)
 	}
 	effect(() => {
 		const current = read(target)
-		const value = isFunction(state) ? state(current) : host.get<T>(state)
+		const value = isFunction(s) ? s(current) : host.get<T>(s)
 		if (!Object.is(value, current)) {
 
 			// A value of null triggers deletion
@@ -77,12 +77,12 @@ const updateElement = <E extends Element, T>(
  * 
  * @since 0.9.0
  * @param {string} tag - tag name of the element to create
- * @param {StateKeyOrFunction<Record<string, string>>} state - state bound to the element's attributes
+ * @param {StateKeyOrFunction<Record<string, string>>} s - state bound to the element's attributes
  */
 const createElement = (
     tag: string,
-    state: StateKeyOrFunction<Record<string, string>>
-) => updateElement(state, {
+    s: StateKeyOrFunction<Record<string, string>>
+) => updateElement(s, {
 	read: () => null,
 	update: (el: Element, value) => ce(el, tag, value),
 })
@@ -90,11 +90,12 @@ const createElement = (
 /**
  * Remove an element from the DOM
  * 
- * @since 0.8.0
+ * @since 0.9.0
+ * @param {StateKeyOrFunction<string>} s - state bound to the element removal
  */
 const removeElement = <E extends Element>(
-	state: StateKeyOrFunction<boolean>
-) => updateElement(state, {
+	s: StateKeyOrFunction<boolean>
+) => updateElement(s, {
 	read: (el: E) => null != el,
     update: (el: E, value: boolean) => value ? re(el) : Promise.resolve(null)
 })
@@ -103,11 +104,11 @@ const removeElement = <E extends Element>(
  * Set text content of an element
  * 
  * @since 0.8.0
- * @param {StateKeyOrFunction<string>} state - state bound to the text content
+ * @param {StateKeyOrFunction<string>} s - state bound to the text content
  */
 const setText = <E extends Element>(
-	state: StateKeyOrFunction<string>
-) => updateElement(state, {
+	s: StateKeyOrFunction<string>
+) => updateElement(s, {
 	read: (el: E) => el.textContent,
 	update: (el: E, value) => st(el, value)
 })
@@ -117,12 +118,12 @@ const setText = <E extends Element>(
  * 
  * @since 0.8.0
  * @param {PropertyKey} key - name of property to be set
- * @param {StateKeyOrFunction<unknown>} state - state bound to the property value
+ * @param {StateKeyOrFunction<unknown>} s - state bound to the property value
  */
 const setProperty = <E extends Element>(
 	key: PropertyKey,
-	state: StateKeyOrFunction<unknown> = key
-) => updateElement(state, {
+	s: StateKeyOrFunction<unknown> = key
+) => updateElement(s, {
 	read: (el: E) => (el as Record<PropertyKey, any>)[key],
 	update: (el: E, value: any) => (el as Record<PropertyKey, any>)[key] = value,
 })
@@ -132,12 +133,12 @@ const setProperty = <E extends Element>(
  * 
  * @since 0.8.0
  * @param {string} name - name of attribute to be set
- * @param {StateKeyOrFunction<string>} state - state bound to the attribute value
+ * @param {StateKeyOrFunction<string>} s - state bound to the attribute value
  */
 const setAttribute = <E extends Element>(
 	name: string,
-	state: StateKeyOrFunction<string> = name
-) => updateElement(state, {
+	s: StateKeyOrFunction<string> = name
+) => updateElement(s, {
 	read: (el: E) => el.getAttribute(name),
 	update: (el: E, value: string) => sa(el, name, value),
 	delete: (el: E) => ra(el, name)
@@ -148,12 +149,12 @@ const setAttribute = <E extends Element>(
  * 
  * @since 0.8.0
  * @param {string} name - name of attribute to be toggled
- * @param {StateKeyOrFunction<boolean>} state - state bound to the attribute existence
+ * @param {StateKeyOrFunction<boolean>} s - state bound to the attribute existence
  */
 const toggleAttribute = <E extends Element>(
 	name: string,
-	state: StateKeyOrFunction<boolean> = name
-) => updateElement(state, {
+	s: StateKeyOrFunction<boolean> = name
+) => updateElement(s, {
 	read: (el: E) => el.hasAttribute(name),
 	update: (el: E, value: boolean) => ta(el, name, value)
 })
@@ -163,12 +164,12 @@ const toggleAttribute = <E extends Element>(
  * 
  * @since 0.8.0
  * @param {string} token - class token to be toggled
- * @param {StateKeyOrFunction<boolean>} state - state bound to the class existence
+ * @param {StateKeyOrFunction<boolean>} s - state bound to the class existence
  */
 const toggleClass = <E extends Element>(
 	token: string,
-	state: StateKeyOrFunction<boolean> = token
-) => updateElement(state, {
+	s: StateKeyOrFunction<boolean> = token
+) => updateElement(s, {
 	read: (el: E) => el.classList.contains(token),
 	update: (el: E, value: boolean) => tc(el, token, value)
 })
@@ -178,12 +179,12 @@ const toggleClass = <E extends Element>(
  * 
  * @since 0.8.0
  * @param {string} prop - name of style property to be set
- * @param {StateKeyOrFunction<string>} state - state bound to the style property value
+ * @param {StateKeyOrFunction<string>} s - state bound to the style property value
  */
 const setStyle = <E extends (HTMLElement | SVGElement | MathMLElement)>(
 	prop: string,
-	state: StateKeyOrFunction<string> = prop
-) => updateElement(state, {
+	s: StateKeyOrFunction<string> = prop
+) => updateElement(s, {
 		read: (el: E) => el.style.getPropertyValue(prop),
 		update: (el: E, value: string) => ss(el, prop, value) as Promise<E>,
 		delete: (el: E) => rs(el, prop) as Promise<E>

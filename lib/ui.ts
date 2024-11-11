@@ -1,21 +1,12 @@
-import { type Signal, isSignal, computed } from '@efflore/cause-effect'
+import { type Signal } from '@efflore/cause-effect'
 
-import { Capsula } from './capsula'
+import { Capsula, toSignal } from './capsula'
 import { log, LOG_ERROR, valueString } from './log'
-import { isFunction, isPropertyKey } from './util'
+import { isPropertyKey } from './util'
 
 /* === Types === */
 
-type StateLike<T> = PropertyKey | Signal<T> | (() => T)
-
-/* === Exported Functions === */
-
-const fromStateLike = <T>(host: Capsula, source: StateLike<T>): Signal<T> | undefined => {
-	return isPropertyKey(source) ? host.signals.get(source)
-	    : isSignal(source) ? source
-		: isFunction(source) ? computed(source.bind(host), true)
-		: undefined
-}
+type StateLike<T> = PropertyKey | Signal<T> | ((v?: T) => T)
 
 /* === Exported Class === */
 
@@ -40,7 +31,9 @@ class UI<T extends Element> {
 			await Capsula.registry.whenDefined(target.localName)
 			if (target instanceof Capsula) {
 				Object.entries(states).forEach(([name, source]) => {
-					const value = fromStateLike(this.host, source)
+					const value = isPropertyKey(source)
+						? this.host.signals.get(source)
+						: toSignal(source)
 					if (value)
 						target.set(name, value)
 					else
@@ -58,4 +51,4 @@ class UI<T extends Element> {
 
 }
 
-export { UI }
+export { type StateLike, UI }

@@ -1,6 +1,6 @@
 import { type Signal } from '@efflore/cause-effect';
 import { Capsula } from './capsula';
-type StateLike<T> = PropertyKey | Signal<T> | (() => T);
+type StateLike<T> = PropertyKey | Signal<T> | ((v?: T) => T);
 declare class UI<T extends Element> {
     readonly host: Capsula;
     readonly targets: T[];
@@ -10,4 +10,4 @@ declare class UI<T extends Element> {
     pass(states: Record<string, StateLike<any>>): UI<T>;
     sync(...fns: ((host: Capsula, target: T, index: number) => void)[]): UI<T>;
 }
-export { UI };
+export { type StateLike, UI };

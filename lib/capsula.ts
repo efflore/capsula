@@ -17,6 +17,13 @@ export type AttributeParser<T> = (
 
 export type ValueOrAttributeParser<T> = T | AttributeParser<T>
 
+/* === Exported Functions === */
+
+export const toSignal = (value: unknown): Signal<unknown> =>
+	isSignal(value) ? value
+		: isFunction(value) ? computed(value, true)
+		: state(value)
+
 /* === Exported Class === */
 
 /**
@@ -174,17 +181,10 @@ export class Capsula extends HTMLElement {
 		// State does not exist => create new state
 		if (!this.signals.has(key)) {
 			op = 'Create'
-			this.signals.set(
-				key,
-				isSignal(value) ? value
-					: isFunction(value) ? computed(value, true)
-					: state(value)
-			)
+			this.signals.set(key, toSignal(value))
 
-		// Early return if state exists and update is false
-		} else if (!update) {
-			return
-		} else {
+		// State already exists => update existing state
+		} else if (update) {
 			const s = this.signals.get(key)
 
 			// Value is a Signal => replace state with new signal
@@ -203,7 +203,9 @@ export class Capsula extends HTMLElement {
 					return
 				}
 			}
-		}
+
+		// Do nothing if state already exists and update is false
+		} else return
 
 		if (Bun.env.DEV_MODE && this.debug)
 			log(value, `${op} state ${valueString(key)} in ${elementName(this)}`)
