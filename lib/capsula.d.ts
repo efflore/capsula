@@ -3,7 +3,6 @@ import { UI } from "./ui";
 import { type UnknownContext } from "./context";
 export type AttributeParser<T> = (value: string | undefined, element: Capsula, old: string | undefined) => T | undefined;
 export type ValueOrAttributeParser<T> = T | AttributeParser<T>;
-export declare const toSignal: (value: unknown) => Signal<unknown>;
 /**
  * Base class for reactive custom elements
  *

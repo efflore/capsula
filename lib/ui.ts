@@ -1,6 +1,6 @@
-import { type Signal } from '@efflore/cause-effect'
+import { type Signal, toSignal } from '@efflore/cause-effect'
 
-import { Capsula, toSignal } from './capsula'
+import { Capsula } from './capsula'
 import { log, LOG_ERROR, valueString } from './log'
 import { isPropertyKey } from './util'
 
@@ -33,7 +33,7 @@ class UI<T extends Element> {
 				Object.entries(states).forEach(([name, source]) => {
 					const value = isPropertyKey(source)
 						? this.host.signals.get(source)
-						: toSignal(source)
+						: toSignal(source, true)
 					if (value)
 						target.set(name, value)
 					else

@@ -1,4 +1,4 @@
-import { type Signal, UNSET, computed, isSignal, isState, state } from "@efflore/cause-effect"
+import { type Computed, type Signal, State, UNSET, isSignal, isState, toSignal } from "@efflore/cause-effect"
 
 import { isDefinedObject, isFunction } from "./util"
 import { elementName, log, LOG_ERROR, valueString } from "./log"
@@ -15,13 +15,6 @@ export type AttributeParser<T> = (
 ) => T | undefined
 
 export type ValueOrAttributeParser<T> = T | AttributeParser<T>
-
-/* === Exported Functions === */
-
-export const toSignal = (value: unknown): Signal<unknown> =>
-	isSignal(value) ? value
-		: isFunction(value) ? computed(value, true)
-		: state(value)
 
 /* === Exported Class === */
 
@@ -181,8 +174,9 @@ export class Capsula extends HTMLElement {
 
 		// State does not exist => create new state
 		if (!this.signals.has(key)) {
-			op = 'Create'
-			this.signals.set(key, toSignal(value))
+			if (Bun.env.DEV_MODE && this.debug) op = 'Create'
+			this.signals.set(key, toSignal(value as State<T> | Computed<T> | T, true))
+
 
 		// State already exists => update existing state
 		} else if (update) {
@@ -190,14 +184,14 @@ export class Capsula extends HTMLElement {
 
 			// Value is a Signal => replace state with new signal
 			if (isSignal(value)) {
-				op = 'Replace'
+				if (Bun.env.DEV_MODE && this.debug) op = 'Replace'
 				this.signals.set(key, value)
 				if (isState(s)) s.set(UNSET) // clear previous state so watchers re-subscribe to new signal
 
 			// Value is not a Signal => set existing state to new value
 			} else {
 				if (isState(s)) {
-					op = 'Update'
+					if (Bun.env.DEV_MODE && this.debug) op = 'Update'
 					s.set(value)
 				} else {
 					log(value, `Computed state ${valueString(key)} in ${elementName(this)} cannot be set`, LOG_ERROR)
@@ -209,7 +203,7 @@ export class Capsula extends HTMLElement {
 		} else return
 
 		if (Bun.env.DEV_MODE && this.debug)
-			log(value, `${op} state ${valueString(key)} in ${elementName(this)}`)
+			log(value, `${op!} state ${valueString(key)} in ${elementName(this)}`)
 
 	}
 
