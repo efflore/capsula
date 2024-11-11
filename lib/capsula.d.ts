@@ -1,6 +1,6 @@
 import { type Signal } from "@efflore/cause-effect";
 import { UI } from "./ui";
-import type { UnknownContext } from "./context";
+import { type UnknownContext } from "./context";
 export type AttributeParser<T> = (value: string | undefined, element: Capsula, old: string | undefined) => T | undefined;
 export type ValueOrAttributeParser<T> = T | AttributeParser<T>;
 /**
