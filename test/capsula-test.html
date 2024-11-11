@@ -96,7 +96,7 @@
 		import { runTests } from '@web/test-runner-mocha'
 		import { assert } from '@esm-bundle/chai'
 		import {
-			Capsula, batch, effect, maybe, animationFrame,
+			Capsula, batch, effect, animationFrame,
 			asBoolean, asInteger, asNumber,
 			setText, setProperty, setAttribute, toggleAttribute, toggleClass, setStyle
 		} from '../index.js'
@@ -120,10 +120,13 @@
 			static states = {
 				count: asInteger,
 				step: asNumber,
-				value: (value, el) => maybe(value)
-					.map(v => Number.isInteger(el.get('step')) ? parseInt(v, 10) : parseFloat(v))
-					.filter(Number.isFinite)
-					.get(),
+				value: (value, el) => {
+					if (value == null) return
+					const parsed = Number.isInteger(el.get('step'))
+						? parseInt(value, 10)
+						: parseFloat(value) 
+					return Number.isFinite(parsed) ? parsed : undefined
+				},
 				selected: asBoolean
 			}
 

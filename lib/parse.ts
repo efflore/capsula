@@ -1,8 +1,14 @@
-import { maybe, result } from '@efflore/flow-sure'
-
 import { isFunction } from './util'
 import type { Capsula } from './capsula'
 import { log, LOG_ERROR } from './log'
+
+/* === Internal Function === */
+
+const parseNumber = (parseFn: (v: string) => number, value?: string): number | undefined => {
+	if (value == null) return
+	const parsed = parseFn(value)
+	return Number.isFinite(parsed) ? parsed : undefined
+}
 
 /* === Exported Functions === */
 
@@ -46,7 +52,9 @@ const asBoolean = (value?: string): boolean =>
  * @returns {number | undefined}
  */
 const asInteger = (value?: string): number | undefined =>
-	maybe(value).map<number>(parseInt).filter(Number.isFinite).get()
+	// maybe(value).map<number>(parseInt).filter(Number.isFinite).get()
+	parseNumber(parseInt, value)
+
 
 /**
  * Parse an attribute as a number
@@ -56,7 +64,9 @@ const asInteger = (value?: string): number | undefined =>
  * @returns {number | undefined}
  */
 const asNumber = (value?: string): number | undefined =>
-	maybe(value).map<number>(parseFloat).filter(Number.isFinite).get()
+	// maybe(value).map<number>(parseFloat).filter(Number.isFinite).get()
+    parseNumber(parseFloat, value)
+
 
 /**
  * Parse an attribute as a string
@@ -74,8 +84,11 @@ const asString = (value?: string): string | undefined => value
  * @param {string[]} valid - array of valid values
  */
 const asEnum = (valid: string[]) =>
-	(value?: string): string | undefined =>
-		maybe(value).filter(v => valid.includes(v.toLowerCase())).get()
+	(value?: string): string | undefined => {
+		// maybe(value).filter(v => valid.includes(v.toLowerCase())).get()
+		if (value == null) return
+		return valid.includes(value.toLowerCase()) ? value : undefined
+	}
 
 /**
  * Parse an attribute as a JSON serialized object
@@ -84,12 +97,20 @@ const asEnum = (valid: string[]) =>
  * @param {string} value - maybe string value
  * @returns {unknown}
  */
-const asJSON = (value?: string): unknown =>
-	result(() => value ? JSON.parse(value) : null).match({
+const asJSON = (value?: string): unknown => {
+	/* result(() => value ? JSON.parse(value) : null).match({
 		Err: error => {
 			log(error, 'Failed to parse JSON', LOG_ERROR)
 			return
 		}
-	}).get()
+	}).get() */
+    if (value == null) return
+    try {
+        return JSON.parse(value)
+    } catch (error) {
+        log(error, 'Failed to parse JSON', LOG_ERROR)
+        return
+    }
+}
 
 export { parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON }

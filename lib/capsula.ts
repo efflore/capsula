@@ -1,5 +1,4 @@
 import { type Signal, UNSET, computed, isSignal, isState, state } from "@efflore/cause-effect"
-import { result, isResult } from "@efflore/flow-sure"
 
 import { isDefinedObject, isFunction } from "./util"
 import { elementName, log, LOG_ERROR, valueString } from "./log"
@@ -47,10 +46,12 @@ export class Capsula extends HTMLElement {
 	 * @param {string} tag - name of the custom element
 	 */
 	static define(tag: string): void {
-		result(() => Capsula.registry.define(tag, this)).match({
-			Err: error => log(tag, error.message, LOG_ERROR),
-			Ok: () => Bun.env.DEV_MODE && log(tag, 'Registered custom element')
-		})
+		try {
+			Capsula.registry.define(tag, this)
+			Bun.env.DEV_MODE && log(tag, 'Registered custom element')
+		} catch (error) {
+			log(error, `Failed to register custom element ${tag}`, LOG_ERROR)
+		}
 	}
 
 	/**
@@ -155,7 +156,7 @@ export class Capsula extends HTMLElement {
 		const unwrap = (v: any): any =>
 			!isDefinedObject(v) ? v // shortcut for non-object values
 				: isFunction(v) ? unwrap(v())
-				: isSignal(v) || isResult(v) ? unwrap(v.get())
+				: isSignal(v) ? unwrap(v.get())
 				: v
 		const value = unwrap(this.signals.get(key))
 		if (Bun.env.DEV_MODE && this.debug)

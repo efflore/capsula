@@ -1,12 +1,24 @@
 /**
  * @name Capsula
- * @version 0.9.0
+ * @version 0.9.1
  * @author Esther Brunner
  */
-export { type AttributeParser, type ValueOrAttributeParser, toSignal, Capsula } from './lib/capsula'
-export * from '@efflore/flow-sure'
-export * from '@efflore/cause-effect'
+export {
+	type Signal, type State, type Computed,
+	UNSET, state, computed, effect, batch, isState, isSignal
+} from '@efflore/cause-effect'
 export { type EnqueueDedupe, enqueue, animationFrame } from '@efflore/pulse'
-export * from './lib/parse'
+
+export {
+	type AttributeParser, type ValueOrAttributeParser,
+	toSignal, Capsula
+} from './lib/capsula'
+
 export { type UnknownContext, useContext } from './lib/context'
-export * from './lib/effects'
+export { parse, asBoolean, asInteger, asNumber, asString, asEnum, asJSON } from './lib/parse'
+export {
+	type ElementUpdater,
+	emit, updateElement,
+	createElement, removeElement,
+	setText, setProperty, setAttribute, toggleAttribute, toggleClass, setStyle
+} from './lib/effects'

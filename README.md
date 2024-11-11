@@ -1,6 +1,6 @@
 # Capsula
 
-Version 0.9.0
+Version 0.9.1
 
 **Capsula** - transform reusable markup, styles and behavior into powerful, reactive, and maintainable Web Components.
 
