@@ -1,6 +1,6 @@
 # Capsula
 
-Version 0.9.1
+Version 0.9.2
 
 **Capsula** - transform reusable markup, styles and behavior into powerful, reactive, and maintainable Web Components.
 
@@ -11,7 +11,7 @@ Version 0.9.1
 * **Reusable Components**: Create highly modular and reusable components to encapsulate styles and behavior.
 * **Declarative States**: Bring static, server-rendered content to life with dynamic interactivity and state management.
 * **Signal-Based Reactivity**: Employ signals for efficient state propagation, ensuring your components react instantly to changes.
-* ***Declarative Effects**: Use granular effects to automatically synchronize UI states with minimal code.
+* **Declarative Effects**: Use granular effects to automatically synchronize UI states with minimal code.
 * **Context Support**: Share global states across your component tree without tightly coupling logic.
 
 ## Installation

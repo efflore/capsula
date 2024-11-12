@@ -1,5 +1,5 @@
 /**
- * @name Capsula
+ * @name Capsula DEV_MODE
  * @version 0.9.2
  * @author Esther Brunner
  */

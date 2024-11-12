@@ -1,9 +1,15 @@
 {
   "name": "@efflore/capsula",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "author": "Esther Brunner",
   "main": "index.js",
   "module": "index.ts",
+  "exports": {
+	".": {
+	  "import": "./index.js",
+      "development": "./index.dev.js"
+	}
+  },
   "type": "module",
   "types": "index.d.ts",
   "description": "Capsula - base class for Web Components with states and UI accessors",
@@ -19,7 +25,7 @@
     "access": "public"
   },
   "scripts": {
-    "build:dev": "BUN_ENV=development bun build index.ts --outdir ./ --define Bun.env.DEV_MODE=true",
+    "build:dev": "BUN_ENV=development bun build index.dev.ts --outdir ./ --define Bun.env.DEV_MODE=true",
     "build": "bun build index.ts --outdir ./ --minify --define Bun.env.DEV_MODE=false && bunx tsc",
     "test": "bun test",
     "watch": "BUN_ENV=development web-test-runner \"test/*-test.html\" --node-resolve --watch --playwright --browsers chromium firefox webkit"
