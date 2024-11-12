@@ -99,7 +99,14 @@ show-appreciation {
 
 ### Lazy Load
 
-A more complex component demonstration async fetching a resource from the server:
+A more complex component demonstrating async fetch from the server:
+
+```html
+<lazy-load src="/lazy-load/snippet.html">
+    <div class="loading">Loading...</div>
+    <div class="error"></div>
+</lazy-load>
+```
 
 ```js
 import { Capsula, setText, setProperty, effect, enqueue } from '@efflore/capsula'
