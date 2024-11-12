@@ -24,7 +24,7 @@ npm install @efflore/capsula
 bun add @efflore/capsula
 ```
 
-We recommend [FlowSure](https://github.com/efflore/flow-sure) to create a robust and expressive data flow for the functional core of you application, supporting error handling and async processing with Result monads.
+For the functional core of your application we recommend [FlowSure](https://github.com/efflore/flow-sure) to create a robust and expressive data flow, supporting error handling and async processing with Result monads.
 
 ## Basic Usage
 
