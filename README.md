@@ -4,7 +4,7 @@ Version 0.9.2
 
 **Capsula** - transform reusable markup, styles and behavior into powerful, reactive, and maintainable Web Components.
 
-`Capsula` is a base class for Web Components with reactive states and UI effects.
+`Capsula` is a base class for Web Components with reactive states and UI effects. Capsula is tiny, around 3kB gzipped JS code, of which unused functions can be tree-shaken by build tools. It uses [Cause & Effect](https://github.com/efflore/cause-effect) internally for state management with signals and [Pulse](https://github.com/efflore/pulse) for scheduled DOM updates.
 
 ## Key Features
 
@@ -23,6 +23,8 @@ npm install @efflore/capsula
 # or with bun
 bun add @efflore/capsula
 ```
+
+We recommend [FlowSure](https://github.com/efflore/flow-sure) to create a robust and expressive data flow for the functional core of you application, supporting error handling and async processing with Result monads.
 
 ## Basic Usage
 
