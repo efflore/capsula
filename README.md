@@ -33,7 +33,7 @@ For the functional core of your application we recommend [FlowSure](https://gith
 Server-rendered markup:
 
 ```html
-<show-appreciation aria-label="Appreciation" count="5">
+<show-appreciation aria-label="Show appreciation">
     <button type="button">
         <span class="emoji">💐</span>
         <span class="count">5</span>
@@ -47,18 +47,22 @@ Capsula component:
 import { Capsula, asInteger, setText } from '@efflore/capsula'
 
 class ShowAppreciation extends Capsula {
-    static observedAttributes = ['count']
-    static states = {
-        count: asInteger
-    }
+    #count = Symbol() // Use a private Symbol as state key
 
     connectedCallback() {
+        // Initialize count state
+        this.set(this.#count, asInteger(this.querySelector('.count').textContent) ?? 0)
 
         // Bind click event to increment count
-        this.first('button').on('click', () => this.set('count', v => ++v))
+        this.first('button').on('click', () => this.set(this.#count, v => ++v))
 
         // Update .count text when count changes
-        this.first('.count').sync(setText('count'))
+        this.first('.count').sync(setText(this.#count))
+    }
+
+    // Expose read-only property for count
+    get count() {
+        return this.get(this.#count)
     }
 }
 ShowAppreciation.define('show-appreciation')
@@ -95,6 +99,94 @@ show-appreciation {
                 transform: scale(1.1);
             }
         }
+    }
+}
+```
+
+### Tab List and Panels
+
+An example demonstrating how to pass states from one component to another. Server-rendered markup:
+
+```html
+<tab-list>
+    <menu>
+        <li><button type="button">Tab 1</button></li>
+        <li><button type="button">Tab 2</button></li>
+        <li><button type="button">Tab 3</button></li>
+    </menu>
+    <tab-panel open>
+        <h2>Tab 1</h2>
+        <p>Content of tab panel 1</p>
+    </tab-panel>
+    <tab-panel>
+        <h2>Tab 2</h2>
+        <p>Content of tab panel 2</p>
+    </tab-panel>
+    <tab-panel>
+        <h2>Tab 3</h2>
+        <p>Content of tab panel 3</p>
+    </tab-panel>
+</tab-list>
+```
+
+Capsula components:
+
+```js
+import { Capsula, setAttribute, toggleAttribute } from '@efflore/capsula'
+
+class TabList extends Capsula {
+    connectedCallback() {
+
+        // Set inital active tab by querying tab-panel[open]
+        let openPanelIndex = 0;
+        this.querySelectorAll('tab-panel').forEach((el, index) => {
+            if (el.hasAttribute('open')) openPanelIndex = index
+        })
+        this.set('active', openPanelIndex)
+
+        // Handle click events on menu buttons and update active tab index
+        this.all('menu button')
+            .on('click', (_el, index) => () => this.set('active', index))
+            .sync((host, target, index) => setAttribute(
+                'aria-pressed',
+                () => host.get('active') === index ? 'true' : 'false')(host, target)
+            )
+
+        // Pass open attribute to tab-panel elements based on active tab index
+        this.all('tab-panel').pass({
+            open: (_el, index) => () => index === this.get('active')
+        })
+    }
+}
+TabList.define('tab-list')
+
+class TabPanel extends Capsula {
+    connectedCallback() {
+        this.self.sync(toggleAttribute('open'))
+    }
+}
+TabPanel.define('tab-panel')
+```
+
+Example styles:
+
+```css
+tab-list menu {
+    list-style: none;
+    display: flex;
+    gap: 0.2rem;
+    padding: 0;
+
+    & button[aria-pressed="true"] {
+        color: red;
+    }
+}
+
+tab-panel {
+    display: none;
+
+    &[open] {
+        display: block;
     }
 }
 ```

@@ -12,7 +12,7 @@
 			flex-direction: row;
 			gap: 1rem;
 
-			p {
+			& p {
 				margin-block: 0.2rem;
 			}
 		}
@@ -23,7 +23,7 @@
 			gap: 0.2rem;
 			padding: 0;
 
-			button[aria-pressed="true"] {
+			& button[aria-pressed="true"] {
 				color: red;
 			}
 		}
@@ -112,9 +112,9 @@
 	</lazy-load>
 	<tab-list>
 		<menu>
-			<li><button>Tab 1</button></li>
-			<li><button>Tab 2</button></li>
-			<li><button>Tab 3</button></li>
+			<li><button type="button">Tab 1</button></li>
+			<li><button type="button">Tab 2</button></li>
+			<li><button type="button">Tab 3</button></li>
 		</menu>
 		<tab-panel open>
 			<h2>Tab 1</h2>
@@ -308,17 +308,23 @@
 
 		class TabList extends Capsula {
 			connectedCallback() {
+
+				// Set inital active tab by querying tab-panel[open]
 				let openPanelIndex = 0;
 				this.querySelectorAll('tab-panel').forEach((el, index) => {
 					if (el.hasAttribute('open')) openPanelIndex = index
 				})
 				this.set('active', openPanelIndex)
+
+				// Handle click events on menu buttons and update active tab index
 				this.all('menu button')
 				    .on('click', (_el, index) => () => this.set('active', index))
 					.sync((host, target, index) => setAttribute(
 						'aria-pressed',
 						() => host.get('active') === index ? 'true' : 'false')(host, target)
 					)
+
+				// Pass open attribute to tab-panel elements based on active tab index
 				this.all('tab-panel').pass({
 					open: (_el, index) => () => index === this.get('active')
 				})
