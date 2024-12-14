@@ -250,6 +250,9 @@ var log = (value, msg, level = LOG_DEBUG) => {
 };
 
 // lib/ui.ts
+var isFactoryFunction = (fn) => isFunction2(fn) && fn.length === 2;
+var fromFactory = (fn, element, index = 0) => isFactoryFunction(fn) ? fn(element, index) : fn;
+
 class UI {
   host;
   targets;
@@ -258,26 +261,21 @@ class UI {
     this.targets = targets;
   }
   on(event, listener) {
-    this.targets.forEach((target) => target.addEventListener(event, listener));
+    this.targets.forEach((target, index) => target.addEventListener(event, fromFactory(listener, target, index)));
     return this;
   }
   off(event, listener) {
-    this.targets.forEach((target) => target.removeEventListener(event, listener));
+    this.targets.forEach((target, index) => target.removeEventListener(event, fromFactory(listener, target, index)));
     return this;
   }
   pass(states) {
-    this.targets.forEach(async (target) => {
+    this.targets.forEach(async (target, index) => {
       await Capsula.registry.whenDefined(target.localName);
-      if (target instanceof Capsula) {
-        Object.entries(states).forEach(([name, source]) => {
-          const value = isPropertyKey(source) ? this.host.signals.get(source) : toSignal(source, true);
-          if (value)
-            target.set(name, value);
-          else
-            log(source, `Invalid source for state ${valueString(name)}`, LOG_ERROR);
-        });
-      } else
-        log(target, `Target is not a Capsula`, LOG_ERROR);
+      target instanceof Capsula ? Object.entries(states).forEach(([name, source]) => {
+        const result = fromFactory(source, target, index);
+        const value = isPropertyKey(result) ? this.host.signals.get(result) : toSignal(result, true);
+        value ? target.set(name, value) : log(source, `Invalid source for state ${valueString(name)}`, LOG_ERROR);
+      }) : log(target, `Target is not a Capsula`, LOG_ERROR);
     });
     return this;
   }
@@ -544,6 +542,7 @@ export {
   asBoolean,
   animationFrame,
   UNSET,
+  UI,
   LOG_WARN,
   LOG_INFO,
   LOG_ERROR,

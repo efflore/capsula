@@ -16,6 +16,25 @@
 				margin-block: 0.2rem;
 			}
 		}
+
+		tab-list menu {
+			list-style: none;
+			display: flex;
+			gap: 0.2rem;
+			padding: 0;
+
+			button[aria-pressed="true"] {
+				color: red;
+			}
+		}
+
+		tab-panel {
+			display: none;
+
+			&[open] {
+				display: block;
+			}
+		}
 	</style>
 
 	<void-component id="void">
@@ -91,6 +110,25 @@
 		<p class="loading" role="status">Loading...</p>
 		<p class="error" role="alert" aria-live="polite"></p>
 	</lazy-load>
+	<tab-list>
+		<menu>
+			<li><button>Tab 1</button></li>
+			<li><button>Tab 2</button></li>
+			<li><button>Tab 3</button></li>
+		</menu>
+		<tab-panel open>
+			<h2>Tab 1</h2>
+			<p>Content of tab panel 1</p>
+		</tab-panel>
+		<tab-panel>
+			<h2>Tab 2</h2>
+			<p>Content of tab panel 2</p>
+		</tab-panel>
+		<tab-panel>
+			<h2>Tab 3</h2>
+			<p>Content of tab panel 3</p>
+		</tab-panel>
+	</tab-list>
 
 	<script type="module">
 		import { runTests } from '@web/test-runner-mocha'
@@ -131,9 +169,15 @@
 			}
 
 			connectedCallback() {
-				this.first('h1').sync(setText('heading'), toggleClass('selected'))
+				this.first('h1').sync(
+					setText('heading'),
+					toggleClass('selected')
+				)
 				this.first('span').sync(setText('count'))
-				this.first('input').sync(setAttribute('step'), setProperty('value'))
+				this.first('input').sync(
+					setAttribute('step'),
+					setProperty('value')
+				)
 			}
 		}
 		UpdatingComponent.define('updating-component')
@@ -202,18 +246,18 @@
 
 		class InputField extends Capsula {
 			connectedCallback() {
-				const input = this.querySelector('input')
-				this.set('value', input.value)
-				input.onchange = () => this.set('value', input.value)
+				this.first('input')
+					.sync(setProperty('value'))
+					.on('change', e => this.set('value', e.target.value))
 			}
 		}
 		InputField.define('input-field')
 
 		class InputCheckbox extends Capsula {
 			connectedCallback() {
-				const input = this.querySelector('input')
-				this.set('checked', input.checked)
-				input.onchange = () => this.set('checked', input.checked)
+				this.first('input')
+					.sync(setProperty('checked'))
+					.on('change', e => this.set('checked', e.target.checked))
 			}
 		}
 		InputCheckbox.define('input-checkbox')
@@ -261,6 +305,33 @@
 			}
 		}
 		LazyLoad.define('lazy-load')
+
+		class TabList extends Capsula {
+			connectedCallback() {
+				let openPanelIndex = 0;
+				this.querySelectorAll('tab-panel').forEach((el, index) => {
+					if (el.hasAttribute('open')) openPanelIndex = index
+				})
+				this.set('active', openPanelIndex)
+				this.all('menu button')
+				    .on('click', (_el, index) => () => this.set('active', index))
+					.sync((host, target, index) => setAttribute(
+						'aria-pressed',
+						() => host.get('active') === index ? 'true' : 'false')(host, target)
+					)
+				this.all('tab-panel').pass({
+					open: (_el, index) => () => index === this.get('active')
+				})
+			}
+		}
+		TabList.define('tab-list')
+
+		class TabPanel extends Capsula {
+			connectedCallback() {
+				this.self.sync(toggleAttribute('open'))
+            }
+		}
+		TabPanel.define('tab-panel')
 
 		runTests(() => {
 
@@ -648,6 +719,37 @@
 					assert.equal(normalizeText(lazyComponent.querySelector('.error').textContent), 'Not Found', 'Should display error message')
 					assert.equal(lazyComponent.querySelector('.loading'), null, 'Should no longer have a loading status')
 					assert.equal(lazyComponent.shadowRoot, null, 'Should not have a shadow root')
+				})
+
+			})
+
+			describe('Tab List', function () {
+
+				it('should mark the first button as active', async function() {
+					const tabList = document.querySelector('tab-list')
+                    const buttons = tabList.querySelectorAll('button')
+					await animationFrame()
+                    assert.equal(buttons[0].ariaPressed, 'true', 'Should have the first button marked as active')
+				})
+
+				it('should change the active tab when a button is clicked', async function() {
+					const tabList = document.querySelector('tab-list')
+                    const buttons = tabList.querySelectorAll('button')
+                    buttons[1].click()
+                    await animationFrame()
+                    assert.equal(buttons[0].ariaPressed, 'false', 'Should have the first button marked as inactive')
+                    assert.equal(buttons[1].ariaPressed, 'true', 'Should have the second button marked as active')
+                })
+
+				it('should display the content of the active tab', async function() {
+					const tabList = document.querySelector('tab-list')
+                    const buttons = tabList.querySelectorAll('button')
+                    await animationFrame()
+                    assert.equal(tabList.querySelectorAll('tab-panel')[1].hasAttribute('open'), true, 'Should mark the second tab-panel as open')
+                    buttons[0].click()
+                    await animationFrame()
+                    assert.equal(tabList.querySelectorAll('tab-panel')[0].hasAttribute('open'), true, 'Should mark the second tab-panel as not open')
+                    assert.equal(tabList.querySelectorAll('tab-panel')[0].hasAttribute('open'), true, 'Should mark the first tab-panel as open')
 				})
 
 			})
